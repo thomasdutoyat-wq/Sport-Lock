@@ -62,6 +62,12 @@
           : "TV débloquée ✅ Profite";
     }
   </script>
-
+fetch("https://https://sport-lock-strava.thomas-dutoyat.workers.dev/")
+  .then(res => res.json())
+  .then(data => {
+    setProgress(data.today); // met à jour le cercle du jour
+    setWeekProgress(data.week); // si tu veux afficher la semaine
+  })
+  .catch(err => console.error("Erreur récupération données :", err));
 </body>
 </html>
