@@ -47,7 +47,6 @@ function addSport(sportName='', distance=0){
       <option value="muscu" ${sportName==='muscu'?'selected':''}>Musculation</option>
     </select>
     <input type="number" class="distance" value="${distance}" placeholder="Distance km">
-    <input type="number" class="done" value="0" placeholder="Réalisé km">
     <button onclick="removeSport(this)">Supprimer</button>
   `;
   container.appendChild(div);
@@ -63,25 +62,30 @@ function saveGoals(){
   container.querySelectorAll('.sport-item').forEach(div=>{
     const sport = div.querySelector('.sport').value;
     const distance = parseFloat(div.querySelector('.distance').value) || 0;
-    const done = parseFloat(div.querySelector('.done').value) || 0;
-    goals.push({sport,distance,done});
+    goals.push({sport,distance});
   });
   localStorage.setItem('dailyGoals', JSON.stringify(goals));
   alert('Objectifs enregistrés !');
-  updateProgress();
+  updateProgressFromStrava();
 }
 
-/* Calcul du pourcentage précis */
-function updateProgress(){
+/* Calcul précis basé sur Strava */
+function updateProgressFromStrava(){
   const goals = JSON.parse(localStorage.getItem('dailyGoals')) || [];
-  const totalGoal = goals.reduce((sum,g)=>sum+g.distance,0);
-  const totalDone = goals.reduce((sum,g)=>{
-    return sum + (parseFloat(g.done)||0); // utilise exactement la valeur saisie
-  },0); 
-  const percent = totalGoal>0 ? Math.min(Math.round(totalDone/totalGoal*100),100) : 0;
-  setProgress(percent);
-}
+  if(goals.length===0) return setProgress(0);
 
+  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/") // ton Worker Strava
+    .then(res => res.json())
+    .then(data => {
+      // data.bySport doit contenir les km réalisés par sport
+      const totalGoal = goals.reduce((sum,g)=>sum+g.distance,0);
+      const totalDone = goals.reduce((sum,g)=>{
+        return sum + (data.bySport[g.sport] || 0);
+      },0);
+      const percent = totalGoal>0 ? Math.min(Math.round(totalDone/totalGoal*100),100) : 0;
+      setProgress(percent);
+    })
+    .catch(err => console.error("Erreur Strava :", err));
 }
 
 /* Cercle */
@@ -101,11 +105,8 @@ window.onload = function(){
   const saved = JSON.parse(localStorage.getItem('dailyGoals')) || [];
   if(saved.length>0){
     saved.forEach(g=>addSport(g.sport,g.distance));
-    // Mettre les done également
-    const items = document.querySelectorAll('.sport-item');
-    saved.forEach((g,i)=>{ items[i].querySelector('.done').value = g.done; });
   } else addSport(); // un sport par défaut
-  updateProgress();
+  updateProgressFromStrava();
 };
 </script>
 
