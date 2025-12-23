@@ -68,6 +68,39 @@
     })
     .catch(err => console.error("Erreur récupération données :", err));
 </script>
+<div>
+  <label>Objectif jour (km) : <input type="number" id="dailyGoal" value="20"></label>
+</div>
+<div>
+  <label>Objectif semaine (km) : <input type="number" id="weeklyGoal" value="80"></label>
+</div>
+<button onclick="saveGoals()">Enregistrer objectifs</button>
+function saveGoals() {
+  const daily = parseFloat(document.getElementById('dailyGoal').value);
+  const weekly = parseFloat(document.getElementById('weeklyGoal').value);
+  localStorage.setItem("dailyGoal", daily);
+  localStorage.setItem("weeklyGoal", weekly);
+  alert("Objectifs enregistrés !");
+  updateProgressFromWorker();
+}
+  function updateProgressFromWorker() {
+  const dailyGoal = parseFloat(localStorage.getItem("dailyGoal")) || 20;
+  const weeklyGoal = parseFloat(localStorage.getItem("weeklyGoal")) || 80;
 
+  fetch("https://sport-lock-strava.YOUR_WORKER.workers.dev")
+    .then(res => res.json())
+    .then(data => {
+      const percentDay = Math.min(Math.round((data.today / dailyGoal) * 100), 100);
+      const percentWeek = Math.min(Math.round((data.week / weeklyGoal) * 100), 100);
+      setProgress(percentDay);
+      console.log("Pourcentage jour :", percentDay, "Pourcentage semaine :", percentWeek);
+    })
+    .catch(err => console.error("Erreur récupération données :", err));
+}
+  window.onload = function() {
+  if(!localStorage.getItem("dailyGoal")) localStorage.setItem("dailyGoal", 20);
+  if(!localStorage.getItem("weeklyGoal")) localStorage.setItem("weeklyGoal", 80);
+  updateProgressFromWorker();
+};
 </body>
 </html>
