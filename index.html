@@ -11,20 +11,18 @@ body { font-family: Arial, sans-serif; text-align:center; margin:20px; }
 button { margin: 5px; padding: 10px 20px; font-size: 16px; }
 #status { margin-top: 20px; font-size: 18px; }
 label { display:block; margin:5px 0; }
-input { padding:5px; width:100px; }
+input, select { padding:5px; width:120px; margin-right:5px; }
+.sport-item { margin-bottom: 5px; }
 </style>
 </head>
 <body>
 
 <h1>Sport Lock</h1>
 
-<div>
-  <label>Objectif jour (km) :</label>
-  <input type="number" id="dailyGoal" value="20">
-  <label>Objectif semaine (km) :</label>
-  <input type="number" id="weeklyGoal" value="80">
-  <button onclick="saveGoals()">Enregistrer objectifs</button>
-</div>
+<h3>Objectifs Journée</h3>
+<div id="daily-sports"></div>
+<button onclick="addSport()">Ajouter un sport</button>
+<button onclick="saveGoals()">Enregistrer objectifs</button>
 
 <div class="circle">
   <div class="progress" id="progress"></div>
@@ -36,49 +34,70 @@ input { padding:5px; width:100px; }
 <button onclick="lockTV()">Bloquer TV</button>
 
 <script>
-/* Stockage des objectifs */
-function saveGoals() {
-  const daily = parseFloat(document.getElementById('dailyGoal').value);
-  const weekly = parseFloat(document.getElementById('weeklyGoal').value);
-  localStorage.setItem("dailyGoal", daily);
-  localStorage.setItem("weeklyGoal", weekly);
-  alert("Objectifs enregistrés !");
-  updateProgressFromWorker();
+/* Ajouter un sport */
+function addSport(sportName='', distance=0){
+  const container = document.getElementById('daily-sports');
+  const div = document.createElement('div');
+  div.className = 'sport-item';
+  div.innerHTML = `
+    <select class="sport">
+      <option value="course" ${sportName==='course'?'selected':''}>Course à pied</option>
+      <option value="velo" ${sportName==='velo'?'selected':''}>Vélo</option>
+      <option value="marche" ${sportName==='marche'?'selected':''}>Marche</option>
+      <option value="muscu" ${sportName==='muscu'?'selected':''}>Musculation</option>
+    </select>
+    <input type="number" class="distance" value="${distance}" placeholder="Distance km">
+    <button onclick="removeSport(this)">Supprimer</button>
+  `;
+  container.appendChild(div);
+}
+
+/* Supprimer sport */
+function removeSport(btn){ btn.parentElement.remove(); }
+
+/* Enregistrer les objectifs */
+function saveGoals(){
+  const container = document.getElementById('daily-sports');
+  const goals = [];
+  container.querySelectorAll('.sport-item').forEach(div=>{
+    const sport = div.querySelector('.sport').value;
+    const distance = parseFloat(div.querySelector('.distance').value) || 0;
+    goals.push({sport,distance});
+  });
+  localStorage.setItem('dailyGoals', JSON.stringify(goals));
+  alert('Objectifs enregistrés !');
+  updateProgress();
+}
+
+/* Calcul du pourcentage (test sans Strava) */
+function updateProgress(){
+  const goals = JSON.parse(localStorage.getItem('dailyGoals')) || [];
+  const totalGoal = goals.reduce((sum,g)=>sum+g.distance,0);
+  // Pour test, on simule les km réalisés = moitié de chaque objectif
+  const totalDone = goals.reduce((sum,g)=>sum+g.distance*0.5,0); 
+  const percent = totalGoal>0 ? Math.min(Math.round(totalDone/totalGoal*100),100) : 0;
+  setProgress(percent);
+}
+
+/* Cercle */
+function setProgress(percent){
+  const deg = percent*3.6;
+  document.getElementById('progress').style.transform=`rotate(${deg}deg)`;
+  document.getElementById('percent').textContent = percent + '%';
+  document.getElementById('status').textContent = percent>=100 ? 'Sport terminé ✅' : 'Sport non terminé 🔒';
 }
 
 /* Boutons TV */
-function unlockTV() { document.getElementById('status').textContent="TV débloquée ✅"; }
-function lockTV() { document.getElementById('status').textContent="Sport non terminé 🔒"; }
-
-/* Cercle */
-function setProgress(percent) {
-  const deg = percent*3.6;
-  document.getElementById('progress').style.transform=`rotate(${deg}deg)`;
-  document.getElementById('percent').textContent=percent+"%";
-  if(percent>=100) document.getElementById('status').textContent="Sport terminé ✅";
-  else document.getElementById('status').textContent="Sport non terminé 🔒";
-}
-
-/* Fetch Worker Strava */
-function updateProgressFromWorker() {
-  const dailyGoal = parseFloat(localStorage.getItem("dailyGoal")) || 20;
-  const weeklyGoal = parseFloat(localStorage.getItem("weeklyGoal")) || 80;
-  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/")
-    .then(res => res.json())
-    .then(data => {
-      const percentDay = Math.min(Math.round((data.today/dailyGoal)*100),100);
-      const percentWeek = Math.min(Math.round((data.week/weeklyGoal)*100),100);
-      setProgress(percentDay);
-      console.log("Pourcentage jour :", percentDay, "Pourcentage semaine :", percentWeek);
-    })
-    .catch(err => console.error("Erreur récupération données :", err));
-}
+function unlockTV(){ document.getElementById('status').textContent='TV débloquée ✅'; }
+function lockTV(){ document.getElementById('status').textContent='Sport non terminé 🔒'; }
 
 /* Initialisation */
-window.onload = function() {
-  if(!localStorage.getItem("dailyGoal")) localStorage.setItem("dailyGoal", 20);
-  if(!localStorage.getItem("weeklyGoal")) localStorage.setItem("weeklyGoal", 80);
-  updateProgressFromWorker();
+window.onload = function(){
+  const saved = JSON.parse(localStorage.getItem('dailyGoals')) || [];
+  if(saved.length>0){
+    saved.forEach(g=>addSport(g.sport,g.distance));
+  } else addSport(); // un sport par défaut
+  updateProgress();
 };
 </script>
 
