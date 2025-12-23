@@ -9,70 +9,58 @@
       font-family: -apple-system, BlinkMacSystemFont;
       background: #0f172a;
       color: white;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
+      text-align: center;
+      padding-top: 20vh;
       margin: 0;
     }
     .circle {
-      width: 200px;
-      height: 200px;
+      width: 180px;
+      height: 180px;
       border-radius: 50%;
       border: 12px solid #334155;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 48px;
-      margin-bottom: 20px;
+      font-size: 42px;
+      margin: 0 auto 20px;
     }
     button {
-      background: #22c55e;
-      border: none;
-      padding: 15px 25px;
+      display: block;
+      margin: 12px auto;
+      padding: 14px 20px;
       font-size: 18px;
       border-radius: 10px;
-      margin-top: 20px;
+      border: none;
+      width: 240px;
     }
-    .locked {
-      background: #ef4444;
-    }
+    .red { background: #ef4444; color: white; }
+    .green { background: #22c55e; color: black; }
   </style>
 </head>
 <body>
 
   <div class="circle" id="percent">0%</div>
-  <div id="message">Charge tes données Strava</div>
+  <div id="message">TV bloquée 🔒</div>
 
-  <button onclick="unlockTV()">Débloquer la TV</button>
+  <button class="red" onclick="setProgress(0)">
+    Sport pas fait
+  </button>
+
+  <button class="green" onclick="setProgress(100)">
+    Sport terminé
+  </button>
 
   <script>
-    // ⚠️ V1 : valeur manuelle pour tester
     let progress = 0;
 
-    function updateUI() {
+    function setProgress(value) {
+      progress = value;
       document.getElementById("percent").innerText = progress + "%";
       document.getElementById("message").innerText =
         progress < 100
-          ? "Sport non terminé — TV bloquée 🔒"
-          : "Bravo 🎉 TV débloquée ✅";
+          ? "TV bloquée 🔒 Va faire ton sport"
+          : "TV débloquée ✅ Profite";
     }
-
-    function unlockTV() {
-      if (progress < 100) {
-        alert("Pas encore mérité 😈");
-        // Redirection vers la Bbox pour BLOQUER
-        window.location.href = "http://bbox.lan";
-      } else {
-        alert("TV débloquée 🎉");
-        window.location.href = "http://bbox.lan";
-      }
-    }
-
-    // TEST
-    progress = 60; // change à 100 pour tester
-    updateUI();
   </script>
 
 </body>
