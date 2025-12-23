@@ -1,31 +1,46 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Sport Lock</title>
-  <style>
-    body { font-family: Arial, sans-serif; text-align:center; margin-top:50px; }
-    .circle {
-      width: 150px; height: 150px; border-radius: 50%; border: 10px solid #ccc; 
-      margin: 20px auto; position: relative;
-    }
-    .progress {
-      position: absolute; top:0; left:0; width:100%; height:100%; 
-      border-radius: 50%; clip: rect(0px, 150px, 150px, 75px); 
-      background: #4caf50; transform: rotate(0deg);
-      transform-origin: center center;
-    }
-    .inner {
-      width: 120px; height: 120px; background:#fff; border-radius:50%; 
-      position:absolute; top:15px; left:15px; line-height:120px; font-size:24px;
-    }
-    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
-    #status { margin-top: 20px; font-size: 18px; }
-  </style>
+<meta charset="UTF-8">
+<title>Sport Lock</title>
+<style>
+body { font-family: Arial, sans-serif; text-align:center; margin:20px; }
+.circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #ccc; margin: 20px auto; position: relative; }
+.progress { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; clip: rect(0px, 150px, 150px, 75px); background: #4caf50; transform: rotate(0deg); transform-origin: center center; }
+.inner { width: 120px; height: 120px; background:#fff; border-radius:50%; position:absolute; top:15px; left:15px; line-height:120px; font-size:24px; }
+button { margin: 5px; padding: 10px 20px; font-size: 16px; }
+#status { margin-top: 20px; font-size: 18px; }
+
+.tabs { margin:20px auto; display:flex; justify-content:center; gap:10px; }
+.tab { padding:10px 20px; cursor:pointer; background:#eee; border-radius:5px; }
+.tab.active { background:#4caf50; color:white; }
+
+.tab-content { display:none; margin-top:20px; }
+.tab-content.active { display:block; }
+label { display:block; margin:5px 0; }
+input, select { padding:5px; width:100px; }
+</style>
 </head>
 <body>
 
 <h1>Sport Lock</h1>
+
+<div class="tabs">
+  <div class="tab active" data-tab="daily">Objectifs Journée</div>
+  <div class="tab" data-tab="week">Objectifs Semaine</div>
+</div>
+
+<div class="tab-content active" id="daily">
+  <h3>Objectifs Journée</h3>
+  <div id="daily-sports"></div>
+  <button onclick="addSport('daily')">Ajouter un sport</button>
+</div>
+
+<div class="tab-content" id="week">
+  <h3>Objectifs Semaine</h3>
+  <div id="week-sports"></div>
+  <button onclick="addSport('week')">Ajouter un sport</button>
+</div>
 
 <div class="circle">
   <div class="progress" id="progress"></div>
@@ -33,74 +48,119 @@
 </div>
 
 <div id="status">Sport non terminé 🔒</div>
-
 <button onclick="unlockTV()">Débloquer TV</button>
 <button onclick="lockTV()">Bloquer TV</button>
 
 <script>
-  // fonctions des boutons (tu peux relier à ta logique bbox si besoin)
-  function unlockTV() {
-    document.getElementById('status').textContent = "TV débloquée ✅";
-  }
-  function lockTV() {
-    document.getElementById('status').textContent = "Sport non terminé 🔒";
-  }
+/* Tabs */
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+    document.getElementById(tab.dataset.tab).classList.add('active');
+  });
+});
 
-  // fonction pour mettre à jour le cercle
-  function setProgress(percent) {
-    const deg = percent * 3.6; // 100% = 360deg
-    document.getElementById('progress').style.transform = `rotate(${deg}deg)`;
-    document.getElementById('percent').textContent = percent + "%";
-    // message automatique selon % 
-    if(percent >= 100) {
-      document.getElementById('status').textContent = "Sport terminé ✅";
-    } else {
-      document.getElementById('status').textContent = "Sport non terminé 🔒";
-    }
-  }
+/* Stockage des objectifs */
+function getGoals(type) {
+  const data = JSON.parse(localStorage.getItem(type)) || [];
+  return data;
+}
 
-  // fetch Worker Strava
-  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/") // <- remplace par ton URL
-    .then(res => res.json())
-    .then(data => {
-      setProgress(data.today);
-      console.log("Progress today:", data.today, "Week:", data.week);
-    })
-    .catch(err => console.error("Erreur récupération données :", err));
-</script>
-<div>
-  <label>Objectif jour (km) : <input type="number" id="dailyGoal" value="20"></label>
-</div>
-<div>
-  <label>Objectif semaine (km) : <input type="number" id="weeklyGoal" value="80"></label>
-</div>
-<button onclick="saveGoals()">Enregistrer objectifs</button>
-function saveGoals() {
-  const daily = parseFloat(document.getElementById('dailyGoal').value);
-  const weekly = parseFloat(document.getElementById('weeklyGoal').value);
-  localStorage.setItem("dailyGoal", daily);
-  localStorage.setItem("weeklyGoal", weekly);
-  alert("Objectifs enregistrés !");
+function saveGoals(type, data) {
+  localStorage.setItem(type, JSON.stringify(data));
   updateProgressFromWorker();
 }
-  function updateProgressFromWorker() {
-  const dailyGoal = parseFloat(localStorage.getItem("dailyGoal")) || 20;
-  const weeklyGoal = parseFloat(localStorage.getItem("weeklyGoal")) || 80;
 
-  fetch("https://sport-lock-strava.YOUR_WORKER.workers.dev")
-    .then(res => res.json())
-    .then(data => {
-      const percentDay = Math.min(Math.round((data.today / dailyGoal) * 100), 100);
-      const percentWeek = Math.min(Math.round((data.week / weeklyGoal) * 100), 100);
-      setProgress(percentDay);
-      console.log("Pourcentage jour :", percentDay, "Pourcentage semaine :", percentWeek);
-    })
-    .catch(err => console.error("Erreur récupération données :", err));
+/* Ajouter un sport */
+function addSport(type) {
+  const container = document.getElementById(type+'-sports');
+  const div = document.createElement('div');
+  div.innerHTML = `
+    <select class="sport">
+      <option value="course">Course à pied</option>
+      <option value="velo">Vélo</option>
+      <option value="marche">Marche</option>
+      <option value="muscu">Musculation</option>
+    </select>
+    <input type="number" class="distance" placeholder="Distance ou min" value="0">
+    <button onclick="removeSport(this)">Supprimer</button>
+  `;
+  container.appendChild(div);
 }
-  window.onload = function() {
-  if(!localStorage.getItem("dailyGoal")) localStorage.setItem("dailyGoal", 20);
-  if(!localStorage.getItem("weeklyGoal")) localStorage.setItem("weeklyGoal", 80);
+
+/* Supprimer sport */
+function removeSport(btn) {
+  btn.parentElement.remove();
+}
+
+/* Récupérer les objectifs du formulaire */
+function readGoals(type) {
+  const container = document.getElementById(type+'-sports');
+  const data = [];
+  container.querySelectorAll('div').forEach(div=>{
+    const sport = div.querySelector('.sport').value;
+    const dist = parseFloat(div.querySelector('.distance').value) || 0;
+    data.push({sport, distance: dist});
+  });
+  saveGoals(type, data);
+}
+
+/* Boutons TV */
+function unlockTV() { document.getElementById('status').textContent="TV débloquée ✅"; }
+function lockTV() { document.getElementById('status').textContent="Sport non terminé 🔒"; }
+
+/* Cercle */
+function setProgress(percent) {
+  const deg = percent*3.6;
+  document.getElementById('progress').style.transform=`rotate(${deg}deg)`;
+  document.getElementById('percent').textContent=percent+"%";
+  if(percent>=100) document.getElementById('status').textContent="Sport terminé ✅";
+  else document.getElementById('status').textContent="Sport non terminé 🔒";
+}
+
+/* Fetch Worker Strava et calcul automatique */
+function updateProgressFromWorker() {
+  const dailyGoals = getGoals('daily');
+  const weeklyGoals = getGoals('week');
+
+  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/")
+    .then(res=>res.json())
+    .then(data=>{
+      // On fait la somme des distances par exemple
+      const dailyTarget = dailyGoals.reduce((sum,g)=>sum+g.distance,0)||20;
+      const weekTarget = weeklyGoals.reduce((sum,g)=>sum+g.distance,0)||80;
+      const percentDay = Math.min(Math.round((data.today/dailyTarget)*100),100);
+      const percentWeek = Math.min(Math.round((data.week/weekTarget)*100),100);
+      setProgress(percentDay);
+      console.log("Jour:", percentDay,"% / Semaine:", percentWeek,"%");
+    }).catch(err=>console.error(err));
+}
+
+/* Initialisation */
+window.onload=function(){
+  ['daily','week'].forEach(type=>{
+    const goals = getGoals(type);
+    const container = document.getElementById(type+'-sports');
+    goals.forEach(g=>{
+      const div=document.createElement('div');
+      div.innerHTML=`
+        <select class="sport">
+          <option value="course"${g.sport==='course'?' selected':''}>Course à pied</option>
+          <option value="velo"${g.sport==='velo'?' selected':''}>Vélo</option>
+          <option value="marche"${g.sport==='marche'?' selected':''}>Marche</option>
+          <option value="muscu"${g.sport==='muscu'?' selected':''}>Musculation</option>
+        </select>
+        <input type="number" class="distance" value="${g.distance}">
+        <button onclick="removeSport(this)">Supprimer</button>
+      `;
+      container.appendChild(div);
+    });
+  });
   updateProgressFromWorker();
 };
+</script>
+
 </body>
 </html>
