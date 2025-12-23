@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Sport Lock</title>
+<title>Sport Lock Test</title>
 <style>
 body { font-family: Arial, sans-serif; text-align:center; margin:20px; }
 .circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #ccc; margin: 20px auto; position: relative; }
@@ -23,7 +23,7 @@ input, select { padding:5px; width:120px; }
 </head>
 <body>
 
-<h1>Sport Lock</h1>
+<h1>Sport Lock Test</h1>
 
 <div class="tabs">
   <div class="tab active" data-tab="daily">Objectifs Journée</div>
@@ -71,7 +71,7 @@ function getGoals(type) {
 
 function saveGoals(type, data) {
   localStorage.setItem(type, JSON.stringify(data));
-  updateProgressFromWorker();
+  updateProgressFromInputs();
 }
 
 /* Ajouter un sport */
@@ -96,7 +96,7 @@ function removeSport(btn) {
   btn.parentElement.remove();
 }
 
-/* Récupérer les objectifs du formulaire */
+/* Lire les objectifs depuis les inputs */
 function readGoals(type) {
   const container = document.getElementById(type+'-sports');
   const data = [];
@@ -121,21 +121,14 @@ function setProgress(percent) {
   else document.getElementById('status').textContent="Sport non terminé 🔒";
 }
 
-/* Fetch Worker Strava et calcul automatique */
-function updateProgressFromWorker() {
+/* Calcul du pourcentage depuis les inputs (test offline) */
+function updateProgressFromInputs() {
   const dailyGoals = getGoals('daily');
-  const weeklyGoals = getGoals('week');
-
-  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/")
-    .then(res=>res.json())
-    .then(data=>{
-      const dailyTarget = dailyGoals.reduce((sum,g)=>sum+g.distance,0)||20;
-      const weekTarget = weeklyGoals.reduce((sum,g)=>sum+g.distance,0)||80;
-      const percentDay = Math.min(Math.round((data.today/dailyTarget)*100),100);
-      const percentWeek = Math.min(Math.round((data.week/weekTarget)*100),100);
-      setProgress(percentDay);
-      console.log("Jour:", percentDay,"% / Semaine:", percentWeek,"%");
-    }).catch(err=>console.error(err));
+  const dailyTarget = dailyGoals.reduce((sum,g)=>sum+g.distance,0) || 20;
+  const dailyDone = dailyGoals.reduce((sum,g)=>sum+g.distance,0); // ici on prend la même valeur pour test
+  const percentDay = Math.min(Math.round((dailyDone/dailyTarget)*100),100);
+  setProgress(percentDay);
+  console.log("Jour (test offline):", percentDay,"%");
 }
 
 /* Initialisation */
@@ -143,7 +136,7 @@ window.onload=function(){
   ['daily','week'].forEach(type=>{
     const goals = getGoals(type);
     const container = document.getElementById(type+'-sports');
-    if(goals.length===0) addSport(type); // ajoute un sport par défaut si vide
+    if(goals.length===0) addSport(type); // ajoute un sport si vide
     goals.forEach(g=>{
       const div=document.createElement('div');
       div.innerHTML=`
@@ -159,7 +152,7 @@ window.onload=function(){
       container.appendChild(div);
     });
   });
-  updateProgressFromWorker();
+  updateProgressFromInputs();
 };
 </script>
 
