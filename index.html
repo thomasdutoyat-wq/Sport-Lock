@@ -6,7 +6,7 @@
 <style>
 body { font-family: Arial, sans-serif; text-align:center; margin:20px; }
 .circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #ccc; margin: 20px auto; position: relative; }
-.progress { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; clip: rect(0px, 150px, 150px, 75px); background: #4caf50; transform: rotate(0deg); transform-origin: center center; }
+.progress { position: absolute; top:0; left:0; width:100%; height:100%; border-radius: 50%; clip: rect(0px, 150px, 150px, 75px); background: #4caf50; transform: rotate(0deg); transform-origin: center center; transition: transform 0.5s; }
 .inner { width: 120px; height: 120px; background:#fff; border-radius:50%; position:absolute; top:15px; left:15px; line-height:120px; font-size:24px; }
 button { margin: 5px; padding: 10px 20px; font-size: 16px; }
 #status { margin-top: 20px; font-size: 18px; }
@@ -47,6 +47,7 @@ function addSport(sportName='', distance=0){
       <option value="muscu" ${sportName==='muscu'?'selected':''}>Musculation</option>
     </select>
     <input type="number" class="distance" value="${distance}" placeholder="Distance km">
+    <input type="number" class="done" value="0" placeholder="Réalisé km">
     <button onclick="removeSport(this)">Supprimer</button>
   `;
   container.appendChild(div);
@@ -62,19 +63,19 @@ function saveGoals(){
   container.querySelectorAll('.sport-item').forEach(div=>{
     const sport = div.querySelector('.sport').value;
     const distance = parseFloat(div.querySelector('.distance').value) || 0;
-    goals.push({sport,distance});
+    const done = parseFloat(div.querySelector('.done').value) || 0;
+    goals.push({sport,distance,done});
   });
   localStorage.setItem('dailyGoals', JSON.stringify(goals));
   alert('Objectifs enregistrés !');
   updateProgress();
 }
 
-/* Calcul du pourcentage (test sans Strava) */
+/* Calcul du pourcentage précis */
 function updateProgress(){
   const goals = JSON.parse(localStorage.getItem('dailyGoals')) || [];
   const totalGoal = goals.reduce((sum,g)=>sum+g.distance,0);
-  // Pour test, on simule les km réalisés = moitié de chaque objectif
-  const totalDone = goals.reduce((sum,g)=>sum+g.distance*0.5,0); 
+  const totalDone = goals.reduce((sum,g)=>sum+g.done,0); 
   const percent = totalGoal>0 ? Math.min(Math.round(totalDone/totalGoal*100),100) : 0;
   setProgress(percent);
 }
@@ -96,6 +97,9 @@ window.onload = function(){
   const saved = JSON.parse(localStorage.getItem('dailyGoals')) || [];
   if(saved.length>0){
     saved.forEach(g=>addSport(g.sport,g.distance));
+    // Mettre les done également
+    const items = document.querySelectorAll('.sport-item');
+    saved.forEach((g,i)=>{ items[i].querySelector('.done').value = g.done; });
   } else addSport(); // un sport par défaut
   updateProgress();
 };
