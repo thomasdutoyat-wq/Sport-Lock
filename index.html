@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Sport Lock Test</title>
+<title>Sport Lock</title>
 <style>
 body { font-family: Arial, sans-serif; text-align:center; margin:20px; }
 .circle { width: 150px; height: 150px; border-radius: 50%; border: 10px solid #ccc; margin: 20px auto; position: relative; }
@@ -10,39 +10,21 @@ body { font-family: Arial, sans-serif; text-align:center; margin:20px; }
 .inner { width: 120px; height: 120px; background:#fff; border-radius:50%; position:absolute; top:15px; left:15px; line-height:120px; font-size:24px; }
 button { margin: 5px; padding: 10px 20px; font-size: 16px; }
 #status { margin-top: 20px; font-size: 18px; }
-
-.tabs { margin:20px auto; display:flex; justify-content:center; gap:10px; }
-.tab { padding:10px 20px; cursor:pointer; background:#eee; border-radius:5px; }
-.tab.active { background:#4caf50; color:white; }
-
-.tab-content { display:none; margin-top:20px; }
-.tab-content.active { display:block; }
 label { display:block; margin:5px 0; }
-input, select { padding:5px; width:120px; }
+input { padding:5px; width:100px; }
 </style>
 </head>
 <body>
 
-<h1>Sport Lock Test</h1>
+<h1>Sport Lock</h1>
 
-<div class="tabs">
-  <div class="tab active" data-tab="daily">Objectifs Journée</div>
-  <div class="tab" data-tab="week">Objectifs Semaine</div>
+<div>
+  <label>Objectif jour (km) :</label>
+  <input type="number" id="dailyGoal" value="20">
+  <label>Objectif semaine (km) :</label>
+  <input type="number" id="weeklyGoal" value="80">
+  <button onclick="saveGoals()">Enregistrer objectifs</button>
 </div>
-
-<div class="tab-content active" id="daily">
-  <h3>Objectifs Journée</h3>
-  <div id="daily-sports"></div>
-  <button onclick="addSport('daily')">Ajouter un sport</button>
-</div>
-
-<div class="tab-content" id="week">
-  <h3>Objectifs Semaine</h3>
-  <div id="week-sports"></div>
-  <button onclick="addSport('week')">Ajouter un sport</button>
-</div>
-
-<button onclick="readGoals('daily'); readGoals('week'); alert('Objectifs enregistrés !');">Enregistrer objectifs</button>
 
 <div class="circle">
   <div class="progress" id="progress"></div>
@@ -54,58 +36,14 @@ input, select { padding:5px; width:120px; }
 <button onclick="lockTV()">Bloquer TV</button>
 
 <script>
-/* Tabs */
-document.querySelectorAll('.tab').forEach(tab=>{
-  tab.addEventListener('click', ()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
-    document.getElementById(tab.dataset.tab).classList.add('active');
-  });
-});
-
 /* Stockage des objectifs */
-function getGoals(type) {
-  return JSON.parse(localStorage.getItem(type)) || [];
-}
-
-function saveGoals(type, data) {
-  localStorage.setItem(type, JSON.stringify(data));
-  updateProgressFromInputs();
-}
-
-/* Ajouter un sport */
-function addSport(type) {
-  const container = document.getElementById(type+'-sports');
-  const div = document.createElement('div');
-  div.innerHTML = `
-    <select class="sport">
-      <option value="course">Course à pied</option>
-      <option value="velo">Vélo</option>
-      <option value="marche">Marche</option>
-      <option value="muscu">Musculation</option>
-    </select>
-    <input type="number" class="distance" placeholder="Distance ou min" value="0">
-    <button onclick="removeSport(this)">Supprimer</button>
-  `;
-  container.appendChild(div);
-}
-
-/* Supprimer sport */
-function removeSport(btn) {
-  btn.parentElement.remove();
-}
-
-/* Lire les objectifs depuis les inputs */
-function readGoals(type) {
-  const container = document.getElementById(type+'-sports');
-  const data = [];
-  container.querySelectorAll('div').forEach(div=>{
-    const sport = div.querySelector('.sport').value;
-    const dist = parseFloat(div.querySelector('.distance').value) || 0;
-    data.push({sport, distance: dist});
-  });
-  saveGoals(type, data);
+function saveGoals() {
+  const daily = parseFloat(document.getElementById('dailyGoal').value);
+  const weekly = parseFloat(document.getElementById('weeklyGoal').value);
+  localStorage.setItem("dailyGoal", daily);
+  localStorage.setItem("weeklyGoal", weekly);
+  alert("Objectifs enregistrés !");
+  updateProgressFromWorker();
 }
 
 /* Boutons TV */
@@ -121,38 +59,26 @@ function setProgress(percent) {
   else document.getElementById('status').textContent="Sport non terminé 🔒";
 }
 
-/* Calcul du pourcentage depuis les inputs (test offline) */
-function updateProgressFromInputs() {
-  const dailyGoals = getGoals('daily');
-  const dailyTarget = dailyGoals.reduce((sum,g)=>sum+g.distance,0) || 20;
-  const dailyDone = dailyGoals.reduce((sum,g)=>sum+g.distance,0); // ici on prend la même valeur pour test
-  const percentDay = Math.min(Math.round((dailyDone/dailyTarget)*100),100);
-  setProgress(percentDay);
-  console.log("Jour (test offline):", percentDay,"%");
+/* Fetch Worker Strava */
+function updateProgressFromWorker() {
+  const dailyGoal = parseFloat(localStorage.getItem("dailyGoal")) || 20;
+  const weeklyGoal = parseFloat(localStorage.getItem("weeklyGoal")) || 80;
+  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/")
+    .then(res => res.json())
+    .then(data => {
+      const percentDay = Math.min(Math.round((data.today/dailyGoal)*100),100);
+      const percentWeek = Math.min(Math.round((data.week/weeklyGoal)*100),100);
+      setProgress(percentDay);
+      console.log("Pourcentage jour :", percentDay, "Pourcentage semaine :", percentWeek);
+    })
+    .catch(err => console.error("Erreur récupération données :", err));
 }
 
 /* Initialisation */
-window.onload=function(){
-  ['daily','week'].forEach(type=>{
-    const goals = getGoals(type);
-    const container = document.getElementById(type+'-sports');
-    if(goals.length===0) addSport(type); // ajoute un sport si vide
-    goals.forEach(g=>{
-      const div=document.createElement('div');
-      div.innerHTML=`
-        <select class="sport">
-          <option value="course"${g.sport==='course'?' selected':''}>Course à pied</option>
-          <option value="velo"${g.sport==='velo'?' selected':''}>Vélo</option>
-          <option value="marche"${g.sport==='marche'?' selected':''}>Marche</option>
-          <option value="muscu"${g.sport==='muscu'?' selected':''}>Musculation</option>
-        </select>
-        <input type="number" class="distance" value="${g.distance}">
-        <button onclick="removeSport(this)">Supprimer</button>
-      `;
-      container.appendChild(div);
-    });
-  });
-  updateProgressFromInputs();
+window.onload = function() {
+  if(!localStorage.getItem("dailyGoal")) localStorage.setItem("dailyGoal", 20);
+  if(!localStorage.getItem("weeklyGoal")) localStorage.setItem("weeklyGoal", 80);
+  updateProgressFromWorker();
 };
 </script>
 
