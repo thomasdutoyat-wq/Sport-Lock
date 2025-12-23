@@ -2,72 +2,72 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sport Lock</title>
   <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont;
-      background: #0f172a;
-      color: white;
-      text-align: center;
-      padding-top: 20vh;
-      margin: 0;
-    }
+    body { font-family: Arial, sans-serif; text-align:center; margin-top:50px; }
     .circle {
-      width: 180px;
-      height: 180px;
-      border-radius: 50%;
-      border: 12px solid #334155;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 42px;
-      margin: 0 auto 20px;
+      width: 150px; height: 150px; border-radius: 50%; border: 10px solid #ccc; 
+      margin: 20px auto; position: relative;
     }
-    button {
-      display: block;
-      margin: 12px auto;
-      padding: 14px 20px;
-      font-size: 18px;
-      border-radius: 10px;
-      border: none;
-      width: 240px;
+    .progress {
+      position: absolute; top:0; left:0; width:100%; height:100%; 
+      border-radius: 50%; clip: rect(0px, 150px, 150px, 75px); 
+      background: #4caf50; transform: rotate(0deg);
+      transform-origin: center center;
     }
-    .red { background: #ef4444; color: white; }
-    .green { background: #22c55e; color: black; }
+    .inner {
+      width: 120px; height: 120px; background:#fff; border-radius:50%; 
+      position:absolute; top:15px; left:15px; line-height:120px; font-size:24px;
+    }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    #status { margin-top: 20px; font-size: 18px; }
   </style>
 </head>
 <body>
 
-  <div class="circle" id="percent">0%</div>
-  <div id="message">TV bloquée 🔒</div>
+<h1>Sport Lock</h1>
 
-  <button class="red" onclick="setProgress(0)">
-    Sport pas fait
-  </button>
+<div class="circle">
+  <div class="progress" id="progress"></div>
+  <div class="inner" id="percent">0%</div>
+</div>
 
-  <button class="green" onclick="setProgress(100)">
-    Sport terminé
-  </button>
+<div id="status">Sport non terminé 🔒</div>
 
-  <script>
-    let progress = 0;
+<button onclick="unlockTV()">Débloquer TV</button>
+<button onclick="lockTV()">Bloquer TV</button>
 
-    function setProgress(value) {
-      progress = value;
-      document.getElementById("percent").innerText = progress + "%";
-      document.getElementById("message").innerText =
-        progress < 100
-          ? "TV bloquée 🔒 Va faire ton sport"
-          : "TV débloquée ✅ Profite";
+<script>
+  // fonctions des boutons (tu peux relier à ta logique bbox si besoin)
+  function unlockTV() {
+    document.getElementById('status').textContent = "TV débloquée ✅";
+  }
+  function lockTV() {
+    document.getElementById('status').textContent = "Sport non terminé 🔒";
+  }
+
+  // fonction pour mettre à jour le cercle
+  function setProgress(percent) {
+    const deg = percent * 3.6; // 100% = 360deg
+    document.getElementById('progress').style.transform = `rotate(${deg}deg)`;
+    document.getElementById('percent').textContent = percent + "%";
+    // message automatique selon % 
+    if(percent >= 100) {
+      document.getElementById('status').textContent = "Sport terminé ✅";
+    } else {
+      document.getElementById('status').textContent = "Sport non terminé 🔒";
     }
-  </script>
-fetch("https://https://sport-lock-strava.thomas-dutoyat.workers.dev/")
-  .then(res => res.json())
-  .then(data => {
-    setProgress(data.today); // met à jour le cercle du jour
-    setWeekProgress(data.week); // si tu veux afficher la semaine
-  })
-  .catch(err => console.error("Erreur récupération données :", err));
+  }
+
+  // fetch Worker Strava
+  fetch("https://sport-lock-strava.thomas-dutoyat.workers.dev/") // <- remplace par ton URL
+    .then(res => res.json())
+    .then(data => {
+      setProgress(data.today);
+      console.log("Progress today:", data.today, "Week:", data.week);
+    })
+    .catch(err => console.error("Erreur récupération données :", err));
+</script>
+
 </body>
 </html>
