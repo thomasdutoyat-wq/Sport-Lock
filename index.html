@@ -75,9 +75,13 @@ function saveGoals(){
 function updateProgress(){
   const goals = JSON.parse(localStorage.getItem('dailyGoals')) || [];
   const totalGoal = goals.reduce((sum,g)=>sum+g.distance,0);
-  const totalDone = goals.reduce((sum,g)=>sum+g.done,0); 
+  const totalDone = goals.reduce((sum,g)=>{
+    return sum + (parseFloat(g.done)||0); // utilise exactement la valeur saisie
+  },0); 
   const percent = totalGoal>0 ? Math.min(Math.round(totalDone/totalGoal*100),100) : 0;
   setProgress(percent);
+}
+
 }
 
 /* Cercle */
