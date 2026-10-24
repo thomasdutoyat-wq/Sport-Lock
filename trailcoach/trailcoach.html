@@ -298,6 +298,28 @@ body {
 .prog-day-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
 .prog-day-notes{font-size:11px;color:var(--text2);margin-top:3px;font-style:italic}
 .prog-done-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
+.prog-tag-custom{opacity:.9}
+/* Bloc objectifs de course */
+.race-obj-block{background:var(--surf2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px}
+.race-obj-title{font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;letter-spacing:.2px}
+.race-obj-hint{font-size:11px;color:var(--text3);margin-bottom:12px;font-style:italic}
+.race-obj-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:500px){.race-obj-grid{grid-template-columns:1fr 1fr}}
+.race-obj-card{background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.race-obj-card.customized{border-color:var(--accent2)}
+.race-obj-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:1px}
+.race-obj-date{font-size:10px;color:var(--text3);margin-bottom:8px}
+.race-obj-fields{display:flex;gap:8px}
+.race-obj-field{display:flex;align-items:center;gap:4px;flex:1}
+.race-obj-input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px 6px;font-family:var(--mono);font-weight:600;min-width:0}
+.race-obj-input:focus{outline:none;border-color:var(--accent2)}
+.race-obj-unit{font-size:10px;color:var(--text3);white-space:nowrap}
+/* Boutons */
+.prog-edit-btn{border:none;border-radius:6px;font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;transition:all .15s}
+.prog-edit-save{background:var(--accent);color:#fff}
+.prog-edit-save:hover{background:#ff7a50}
+.prog-edit-reset{background:var(--surf);border:1px solid var(--red)40;color:var(--red)}
+.prog-edit-reset:hover{background:var(--red)15}
 .prog-week-focus{font-size:11px;color:var(--text2);padding:6px 14px 10px;font-style:italic}
 .current-badge{background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
 
@@ -1128,6 +1150,36 @@ const PLAN_WEEKS = [
 }},
 ];
 
+// ── OBJECTIFS DE COURSE ───────────────────────────────────────────────────
+// Chaque course "possède" un bloc de semaines d'entraînement.
+// Modifier la distance/D+ d'une course → toutes ses semaines de prépa rescalent.
+const RACES_BASE = {
+  soli:  { label:"Soli'Trail",   icon:'🏁', date:'5 déc 2026',  km:30,  elev:600,  weeks:[1, 8]  },
+  tont:  { label:'Tontorrez',    icon:'🏁', date:'20 mar 2027', km:85,  elev:2000, weeks:[9, 23] },
+  ultra: { label:'Ultra-Marin',  icon:'🏁', date:'19 jun 2027', km:100, elev:1600, weeks:[24,37] },
+  grp:   { label:'GRP',          icon:'🏁', date:'20 août 2027',km:120, elev:6000, weeks:[38,43] },
+};
+
+function raceKeyForWeek(w){
+  return Object.keys(RACES_BASE).find(k=>{ const r=RACES_BASE[k]; return w>=r.weeks[0]&&w<=r.weeks[1]; })||null;
+}
+function loadRaceOv(){ try{ return JSON.parse(localStorage.getItem('tc_race_ov')||'{}'); }catch(e){ return {}; } }
+function saveRaceOv(key, km, elev){
+  const ov=loadRaceOv();
+  ov[key]={ km: km===''?null:Number(km), elev: elev===''?null:Number(elev) };
+  try{ localStorage.setItem('tc_race_ov', JSON.stringify(ov)); }catch(e){}
+}
+
+function raceRatio(w){
+  const key = raceKeyForWeek(w); if(!key) return {km:1,elev:1};
+  const base = RACES_BASE[key];
+  const ov   = (loadRaceOv()[key])||{};
+  return {
+    km:   (ov.km   !=null && base.km  >0) ? ov.km   / base.km   : 1,
+    elev: (ov.elev !=null && base.elev>0) ? ov.elev / base.elev : 1,
+  };
+}
+
 function getPhase(w){
   return PHASES.find(p=>w>=p.weeks[0]&&w<=p.weeks[1])||{label:'',color:'#8892b0'};
 }
@@ -1152,15 +1204,70 @@ const DAYS_FR2 = {1:'Lun',2:'Mar',3:'Mer',4:'Jeu',5:'Ven',6:'Sam',0:'Dim'};
 const TYPE_COLOR = {rest:'var(--text3)',easy:'var(--accent2)',intense:'var(--accent)',long:'var(--amber)',strength:'#CE93D8',race:'var(--red)'};
 const CHIP_COLORS = {km:'prog-tag-km',elev:'prog-tag-elev'};
 
+// ── OVERRIDES localStorage ─────────────────────────────────────────────────
+// Calcule les distances de session en appliquant les ratios (course + semaine fine)
+function scaledSessions(wk, ratioKm, ratioElev){
+  const out = {};
+  for(const [dow, s] of Object.entries(wk.sessions)){
+    const newKm   = s.km   ? Math.round(parseFloat(s.km  )*ratioKm *10)/10 : '';
+    const newElev = s.elev ? Math.round(parseFloat(s.elev)*ratioElev)       : '';
+    out[dow] = { ...s, km: newKm?String(newKm):'', elev: newElev?String(newElev):'' };
+  }
+  return out;
+}
+
+function raceObjectivesHTML(){
+  const ov = loadRaceOv();
+  let h = `<div class="race-obj-block">
+    <div class="race-obj-title">🎯 Objectifs de course</div>
+    <div class="race-obj-hint">Modifie une distance ou un D+ → toutes les semaines d'entraînement correspondantes se recalculent automatiquement.</div>
+    <div class="race-obj-grid">`;
+  for(const [key, r] of Object.entries(RACES_BASE)){
+    const o = ov[key]||{};
+    const dispKm   = o.km   != null ? o.km   : r.km;
+    const dispElev = o.elev != null ? o.elev : r.elev;
+    const isCustom = o.km   != null || o.elev != null;
+    h += `<div class="race-obj-card${isCustom?' customized':''}">
+      <div class="race-obj-name">${r.icon} ${r.label}</div>
+      <div class="race-obj-date">${r.date}</div>
+      <div class="race-obj-fields">
+        <div class="race-obj-field">
+          <input type="number" class="race-obj-input" id="rk_${key}" value="${dispKm}" min="1" max="300" step="1">
+          <span class="race-obj-unit">km</span>
+        </div>
+        <div class="race-obj-field">
+          <input type="number" class="race-obj-input" id="re_${key}" value="${dispElev}" min="0" max="15000" step="100">
+          <span class="race-obj-unit">m D+</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="prog-edit-btn prog-edit-save" style="flex:1" onclick="applyRace('${key}')">Appliquer</button>
+        ${isCustom?`<button class="prog-edit-btn prog-edit-reset" onclick="resetRace('${key}')">↺</button>`:''}
+      </div>
+    </div>`;
+  }
+  h += `</div></div>`;
+  return h;
+}
+
 function renderProgramme(acts){
   const cur = currentWeekNum();
-  let html = '';
+  const raceOv = loadRaceOv();
+  let html = raceObjectivesHTML();
   let lastPhase = null;
 
   PLAN_WEEKS.forEach(wk=>{
     const phase = getPhase(wk.w);
     const {start, label: dateLabel} = weekDates(wk.w);
     const isCur = wk.w === cur;
+
+    // Ratio de course (propagé à toutes les semaines du bloc)
+    const ratio = raceRatio(wk.w);
+    const raceKey = raceKeyForWeek(wk.w);
+    const raceIsCustom = raceKey && ((raceOv[raceKey]||{}).km!=null||(raceOv[raceKey]||{}).elev!=null);
+
+    const dispKm   = Math.round(wk.km   * ratio.km);
+    const dispElev = Math.round((wk.elev||0) * ratio.elev);
 
     // Phase header
     if(!lastPhase || lastPhase.label !== phase.label){
@@ -1171,26 +1278,26 @@ function renderProgramme(acts){
       </div>`;
     }
 
-    // Week done chips
-    const monday = new Date(start);
-    monday.setHours(0,0,0,0);
+    // Strava réel
+    const monday = new Date(start); monday.setHours(0,0,0,0);
     const sunday = new Date(monday); sunday.setDate(monday.getDate()+7);
-    const weekActs = acts ? acts.filter(a=>{
-      const d=new Date(a.start_date_local); return d>=monday&&d<sunday;
-    }) : [];
+    const weekActs = acts ? acts.filter(a=>{ const d=new Date(a.start_date_local); return d>=monday&&d<sunday; }) : [];
     const realKm = weekActs.reduce((s,a)=>s+(a.distance||0)/1000,0);
-    const realElev = weekActs.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
     const isDone = wk.w < cur || (wk.w===cur && weekActs.length>0);
 
-    let meta = `<span class="prog-tag prog-tag-km">${wk.km} km</span>`;
-    if(wk.elev) meta += `<span class="prog-tag prog-tag-elev">${wk.elev}m D+</span>`;
-    if(wk.race) meta += `<span class="prog-tag prog-tag-race">Course</span>`;
-    if(isDone && realKm>0) meta += `<span class="prog-tag prog-tag-done">✓ ${realKm.toFixed(0)}km réels</span>`;
+    // Sessions scalées par ratio de course
+    const sessions = scaledSessions(wk, ratio.km, ratio.elev);
 
-    // Sessions
+    // En-tête meta
+    let metaChips = `<span class="prog-tag prog-tag-km${raceIsCustom?' prog-tag-custom':''}">${dispKm} km</span>`;
+    if(dispElev) metaChips += `<span class="prog-tag prog-tag-elev${raceIsCustom?' prog-tag-custom':''}">${dispElev}m D+</span>`;
+    if(wk.race) metaChips += `<span class="prog-tag prog-tag-race">Course</span>`;
+    if(isDone && realKm>0) metaChips += `<span class="prog-tag prog-tag-done">✓ ${realKm.toFixed(0)}km réels</span>`;
+
+    // Sessions HTML
     let sessHtml = '';
     [1,2,3,4,5,6,0].forEach(dow=>{
-      const s = wk.sessions[dow];
+      const s = sessions[dow];
       if(!s) return;
       const color = TYPE_COLOR[s.type]||'var(--text2)';
       let chips = '';
@@ -1198,7 +1305,6 @@ function renderProgramme(acts){
       if(s.elev) chips += `<span class="prog-tag prog-tag-elev">${s.elev}m D+</span>`;
       if(s.pace) chips += `<span class="prog-tag" style="background:#ffffff10;color:var(--accent)">${s.pace}</span>`;
 
-      // Strava match for this day
       const dayDate = new Date(monday); dayDate.setDate(monday.getDate()+(dow===0?6:dow-1));
       const dayAct = acts ? acts.find(a=>new Date(a.start_date_local).toDateString()===dayDate.toDateString()) : null;
       let doneRow = '';
@@ -1211,7 +1317,6 @@ function renderProgramme(acts){
           <span style="font-size:10px;color:var(--green);margin-left:2px">✓ ${dayAct.name}</span>
         </div>`;
       }
-
       sessHtml += `<div class="prog-day">
         <div class="prog-day-label" style="color:${color}">${DAYS_FR2[dow]}</div>
         <div class="prog-day-body">
@@ -1223,7 +1328,7 @@ function renderProgramme(acts){
       </div>`;
     });
 
-    html += `<div class="prog-week${isCur?' current':''}${wk.race?' race-week':''}" id="pw${wk.w}">
+    html += `<div class="prog-week${isCur?' current':''}${wk.race?' race-week':''}${raceIsCustom?' customized':''}" id="pw${wk.w}">
       <div class="prog-week-hdr" onclick="toggleWeek(${wk.w})">
         <span class="prog-week-num">S${wk.w}</span>
         <div style="flex:1;min-width:0">
@@ -1231,7 +1336,7 @@ function renderProgramme(acts){
             <span class="prog-week-dates">${dateLabel}</span>
             ${isCur?'<span class="current-badge">CETTE SEMAINE</span>':''}
           </div>
-          <div class="prog-week-meta" style="margin-top:4px">${meta}</div>
+          <div class="prog-week-meta" style="margin-top:4px">${metaChips}</div>
         </div>
         <span class="prog-week-arrow">▶</span>
       </div>
@@ -1241,13 +1346,23 @@ function renderProgramme(acts){
   });
 
   document.getElementById('prog-out').innerHTML = html;
-  // Auto-open current week
   const el = document.getElementById(`pw${cur}`);
   if(el){ el.classList.add('open'); el.scrollIntoView({behavior:'smooth',block:'start'}); }
 }
 
 function toggleWeek(w){
   document.getElementById(`pw${w}`).classList.toggle('open');
+}
+function applyRace(key){
+  const km  = document.getElementById('rk_'+key).value;
+  const elev= document.getElementById('re_'+key).value;
+  saveRaceOv(key, km, elev);
+  renderProgramme(_acts);
+}
+function resetRace(key){
+  const ov=loadRaceOv(); delete ov[key];
+  try{ localStorage.setItem('tc_race_ov', JSON.stringify(ov)); }catch(e){}
+  renderProgramme(_acts);
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
