@@ -266,6 +266,41 @@ body {
 .wplan-edit-row input{flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:'Inter',system-ui,sans-serif}
 .wplan-edit-row input:focus{outline:none;border-color:var(--accent)}
 
+/* ── Programme semaine par semaine ───────────────────────────────── */
+.prog-phase-hdr{display:flex;align-items:center;gap:8px;padding:14px 0 6px;border-top:2px solid var(--border);margin-top:8px}
+.prog-phase-hdr:first-child{border-top:none;margin-top:0}
+.prog-phase-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.prog-phase-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;color:var(--text2)}
+.prog-week{border-radius:10px;margin-bottom:8px;background:var(--surf);border:1px solid var(--border);overflow:hidden;transition:box-shadow .15s}
+.prog-week.current{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.prog-week.race-week{border-color:var(--red)}
+.prog-week-hdr{padding:10px 14px;cursor:pointer;display:flex;align-items:center;gap:10px}
+.prog-week-hdr:hover{background:var(--surf2)}
+.prog-week-num{font-size:10px;font-weight:700;color:var(--text3);min-width:28px}
+.prog-week.current .prog-week-num{color:var(--accent)}
+.prog-week-dates{font-size:11px;color:var(--text2);flex:1}
+.prog-week-meta{display:flex;gap:6px;flex-wrap:wrap}
+.prog-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;font-family:var(--mono)}
+.prog-tag-km{background:#5b8cf220;color:var(--accent2)}
+.prog-tag-elev{background:#f5a62320;color:var(--amber)}
+.prog-tag-phase{background:#ff613015;color:var(--accent)}
+.prog-tag-race{background:#f04f4f20;color:var(--red)}
+.prog-tag-done{background:#3ecf7220;color:var(--green)}
+.prog-week-arrow{font-size:11px;color:var(--text3);transition:transform .2s}
+.prog-week.open .prog-week-arrow{transform:rotate(90deg)}
+.prog-sessions{display:none;padding:0 14px 12px;border-top:1px solid var(--border)}
+.prog-week.open .prog-sessions{display:block}
+.prog-day{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)15}
+.prog-day:last-child{border-bottom:none}
+.prog-day-label{font-size:10px;font-weight:700;color:var(--text3);min-width:26px;padding-top:2px;text-transform:uppercase}
+.prog-day-body{flex:1}
+.prog-day-name{font-size:12px;font-weight:600;color:var(--text)}
+.prog-day-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+.prog-day-notes{font-size:11px;color:var(--text2);margin-top:3px;font-style:italic}
+.prog-done-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;padding-top:4px;border-top:1px solid var(--border)}
+.prog-week-focus{font-size:11px;color:var(--text2);padding:6px 14px 10px;font-style:italic}
+.current-badge{background:var(--accent);color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+
 /* ── Login ──────────────────────────────────────────────────────────── */
 #login{
   display:flex;
@@ -350,9 +385,9 @@ body {
       <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
       Saison
     </button>
-    <button class="nav-btn" onclick="goTo('terrain',this)">
-      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      Terrain
+    <button class="nav-btn" onclick="goTo('programme',this)">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      Programme
     </button>
   </nav>
 
@@ -502,34 +537,10 @@ body {
   </section>
 
   <!-- ── TERRAIN ───────────────────────────────────────────────────── -->
-  <section class="sec" id="sec-terrain">
+  <section class="sec" id="sec-programme">
     <div style="padding:0 max(16px,env(safe-area-inset-left,16px))">
-      <div class="sec-title">Terrain de la semaine</div>
-      <div class="alert">Entre où tu seras cette semaine pour adapter le D+ recommandé et les séances.</div>
-      <div class="loc-form">
-        <label>Zone / ville</label>
-        <input type="text" id="loc-city" placeholder="Bordeaux, Font-Romeu, Millau…">
-        <label>Type de terrain</label>
-        <select id="loc-terr">
-          <option value="plat">Plat (Bordeaux, plaine)</option>
-          <option value="vallon">Vallonné (collines, coteaux)</option>
-          <option value="montagne">Montagne (Pyrénées, Massif Central…)</option>
-          <option value="mixte">Mixte</option>
-        </select>
-        <label>Phase d'entraînement</label>
-        <select id="loc-phase">
-          <option value="recup">Récupération</option>
-          <option value="base">Base / Volume</option>
-          <option value="charge">Charge / Intensité</option>
-          <option value="taper">Affûtage pré-course</option>
-        </select>
-        <button class="btn-accent" onclick="calcReco()">Calculer mes recommandations</button>
-      </div>
-      <div id="loc-reco"></div>
-      <div class="card">
-        <div class="card-title">📍 Historique</div>
-        <div id="loc-hist" style="font-size:11px;color:var(--text2)">Aucune localisation enregistrée.</div>
-      </div>
+      <div class="sec-title">Programme saison</div>
+      <div id="prog-out"><div class="loading"><div class="spin"></div>Chargement…</div></div>
     </div>
   </section>
 
@@ -753,6 +764,490 @@ function toggleEditPlan(){
     btn.style.color = '';
     container.innerHTML = renderWeekPlan(_acts);
   }
+}
+
+// ── PROGRAMME SAISON ──────────────────────────────────────────────────────
+// Semaine 1 = semaine du 27 Oct 2026
+// sessions: { dow: { nom, km, elev, pace, notes, type } }  dow=1(lun)..0(dim)
+// type: rest|easy|intense|long|strength|race
+const PHASES = [
+  { label:"Affûtage Soli'Trail", color:'#3ecf72', weeks:[1,6] },
+  { label:'Récupération', color:'#8892b0', weeks:[7,8] },
+  { label:'Base hivernale', color:'#5b8cf5', weeks:[9,16] },
+  { label:"Spécifique Tontorrez", color:'#f5a623', weeks:[17,21] },
+  { label:'Récupération', color:'#8892b0', weeks:[22,23] },
+  { label:"Construction Ultra-Marin", color:'#ff6130', weeks:[24,34] },
+  { label:'Récupération', color:'#8892b0', weeks:[35,37] },
+  { label:'Construction GRP', color:'#CE93D8', weeks:[38,43] },
+];
+const S = (nom,km,elev,pace,notes,type)=>({nom,km,elev,pace,notes,type});
+const REST = S('Repos','','','','Récupération & mobilité','rest');
+const RENFO = S('Muscu + gainage','','','','Squats, fentes, gainage, mollets','strength');
+
+const PLAN_WEEKS = [
+// ── S1: Oct 27 - Nov 2 — Récupération après Backyard ──────────────────────
+{w:1, km:32, elev:300, focus:'Récupération douce après le Backyard — jambes légères', sessions:{
+  1:REST,
+  2:S('Footing léger','6','','6\'00-6\'30"/km','Sortie facile, sensations','easy'),
+  3:S('EF plat','8','100','5\'50-6\'15"/km','Sans forcer, écoute le corps','easy'),
+  4:RENFO,
+  5:REST,
+  6:S('Trail plaisir','14','150','6\'00-7\'00"/km','Plaisir avant tout, marche si besoin','easy'),
+  0:S('Récup active','6','50','6\'30-7\'00"/km','Très facile ou marche 30min','easy'),
+}},
+// ── S2: Nov 3-9 — Reprise ─────────────────────────────────────────────────
+{w:2, km:45, elev:600, focus:'Reprise progressive, premières séances qualité', sessions:{
+  1:REST,
+  2:S('Côtes','9','','côtes 8×30" sprint / 2\' récup','8 répétitions côtes raides ~60m D+ chacune','intense'),
+  3:S('EF plat','10','','5\'45-6\'00"/km','Allure confortable, respiration nasale','easy'),
+  4:RENFO,
+  5:S('EF facile','8','','6\'00"/km','Sortie de récupération','easy'),
+  6:S('Trail technique','16','400','6\'00-7\'00"/km','Terrain varié, travail descentes','easy'),
+  0:S('Récup','8','200','6\'30-7\'00"/km','Très facile','easy'),
+}},
+// ── S3: Nov 10-16 — Construction ──────────────────────────────────────────
+{w:3, km:55, elev:800, focus:'Montée en charge, première sortie longue sérieuse', sessions:{
+  1:REST,
+  2:S('Fractionné VMA','10','','4\'20-4\'40"/km (répé)','10×1\' rapide / 1\' récup — allure 3000m','intense'),
+  3:S('EF trail','12','200','5\'45-6\'15"/km','Trail facile avec dénivelé','easy'),
+  4:RENFO,
+  5:S('EF plat','8','','6\'00"/km','Activation légère','easy'),
+  6:S('Sortie longue','20','500','5\'30-6\'00"/km','Terrain trail, ravitaillement à pratiquer','long'),
+  0:S('Récup','8','100','6\'30"/km','Très facile','easy'),
+}},
+// ── S4: Nov 17-23 — Charge maximale avant taper ───────────────────────────
+{w:4, km:62, elev:1000, focus:'Semaine de charge — max avant l\'affûtage Soli\'Trail', sessions:{
+  1:REST,
+  2:S('Seuil','12','','5\'05-5\'15"/km (seuil)','3×15\' au seuil (FC ~85-88%) / 3\' récup','intense'),
+  3:S('EF trail','12','300','5\'45-6\'00"/km','Trail avec légères côtes','easy'),
+  4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'),
+  6:S('Sortie longue','22','600','5\'30-5\'45"/km','Pace proche allure course Soli\'Trail (5\'30")','long'),
+  0:S('Récup trail','10','100','6\'30"/km','Pieds légers','easy'),
+}},
+// ── S5: Nov 24-30 — Réduction (taper) ────────────────────────────────────
+{w:5, km:40, elev:500, focus:'Affûtage — réduction volume, maintien intensité', sessions:{
+  1:REST,
+  2:S('Fractionné court','8','','4\'20-4\'40"/km (répé)','6×1\' vite / 2\' récup — garder les jambes vives','intense'),
+  3:S('EF trail','8','200','5\'45"/km','Sortie courte, terrain trail','easy'),
+  4:RENFO,
+  5:S('EF','6','','6\'00"/km','Courte sortie d\'activation','easy'),
+  6:S('Trail mi-long','14','300','5\'30"/km','Simulation allure course, pas trop long','easy'),
+  0:S('Récup','6','','6\'30"/km','Très court','easy'),
+}},
+// ── S6: Dec 1-7 — RACE WEEK SOLI\'TRAIL (Dec 5) ───────────────────────────
+{w:6, km:38, elev:650, race:"🏁 Soli'Trail Bouliac — 30km ~600m D+", focus:'Semaine de course — repos maximum', sessions:{
+  1:REST,
+  2:S('Activation légère','5','','6\'00-6\'30"/km','Sortie tranquille, 4×100m progressifs en fin','easy'),
+  3:S('Shakeout','4','','6\'15"/km','20\' facile + 4×30" pour réveiller les jambes','easy'),
+  4:REST,
+  5:S('Repos / 10\' footing','2','','','Jambes légères, matériel prêt','rest'),
+  6:S("🏁 SOLI'TRAIL",'30','600','~5\'30-6\'00"/km','C-race — plaisir, test nutrition, pas de sortie fond','race'),
+  0:REST,
+}},
+// ── S7: Dec 8-14 — Récupération post course ───────────────────────────────
+{w:7, km:22, elev:100, focus:'Récupération complète — écoute ton corps', sessions:{
+  1:REST,
+  2:S('Marche ou vélo','','','','Activité douce 30-45min, pas de course','rest'),
+  3:S('Footing très facile','6','','6\'30-7\'00"/km','Si les jambes le permettent','easy'),
+  4:S('Mobilité + bain froid','','','','Étirements, gainage léger, récup active','strength'),
+  5:REST,
+  6:S('Footing facile','10','','6\'15"/km','Retour progressif, plaisir','easy'),
+  0:S('Marche','','','','Récup totale ou 30min marche','rest'),
+}},
+// ── S8: Dec 15-21 — Transition ────────────────────────────────────────────
+{w:8, km:35, elev:300, focus:'Transition — remise en route base Tontorrez', sessions:{
+  1:REST,
+  2:S('EF','8','','6\'00"/km','Reprise tranquille','easy'),
+  3:S('Trail facile','10','150','5\'45-6\'15"/km','','easy'),
+  4:RENFO,
+  5:S('EF','6','','6\'00"/km','','easy'),
+  6:S('Trail','12','150','5\'45"/km','Sortie plaisir','easy'),
+  0:S('Récup','6','','6\'30"/km','','easy'),
+}},
+// ── S9: Dec 22-28 — Base hiver (fêtes) ───────────────────────────────────
+{w:9, km:40, elev:400, focus:'Maintien pendant les fêtes — régularité avant tout', sessions:{
+  1:REST,
+  2:S('EF','8','','5\'50-6\'00"/km','','easy'),
+  3:S('Trail','10','200','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue','16','200','5\'30-5\'45"/km','','long'),
+  0:S('Récup','8','','6\'30"/km','','easy'),
+}},
+// ── S10: Dec 29 - Jan 4 — Build ──────────────────────────────────────────
+{w:10, km:50, elev:600, focus:'Reprise après fêtes — montée en volume', sessions:{
+  1:REST,
+  2:S('Fractionné','10','','4\'20-4\'40"/km','8×1\' / 1\'30 récup','intense'),
+  3:S('EF trail','12','300','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue','18','300','5\'30"/km','','long'),
+  0:S('Récup','10','','6\'30"/km','','easy'),
+}},
+// ── S11: Jan 5-11 — Build D+ ─────────────────────────────────────────────
+{w:11, km:55, elev:900, focus:'Accent sur le D+ — prépa terrain montagneux Tontorrez', sessions:{
+  1:REST,
+  2:S('Côtes longues','12','','côtes 6×2\' D+ / 3\' récup','Répétitions de côtes longues, gainage montée','intense'),
+  3:S('EF trail','12','400','5\'45-6\'15"/km','Terrain varié','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue trail','20','700','5\'30-6\'00"/km','Maximum de dénivelé positif','long'),
+  0:S('Récup','10','200','6\'30"/km','','easy'),
+}},
+// ── S12: Jan 12-18 — Build seuil ─────────────────────────────────────────
+{w:12, km:60, elev:1000, focus:'Renforcement seuil — qualité en montée', sessions:{
+  1:REST,
+  2:S('Seuil','12','','5\'00-5\'10"/km','3×20\' seuil FC ~85-88% / 4\' récup','intense'),
+  3:S('EF trail','14','400','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue','24','800','5\'15-5\'45"/km','Ravitaillement sur parcours','long'),
+  0:S('Récup trail','10','300','6\'30"/km','','easy'),
+}},
+// ── S13: Jan 19-25 — Régénération ────────────────────────────────────────
+{w:13, km:42, elev:500, focus:'Semaine allégée — récupération active', sessions:{
+  1:REST,
+  2:S('Activation','8','','5\'50"/km','Séance courte','easy'),
+  3:S('EF trail','10','200','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','6','','6\'00"/km','','easy'),
+  6:S('Trail mi-long','16','400','5\'30"/km','','easy'),
+  0:S('Récup','8','100','6\'30"/km','','easy'),
+}},
+// ── S14: Jan 26 - Feb 1 — Big week ───────────────────────────────────────
+{w:14, km:70, elev:1400, focus:'Grande semaine — pic de charge avant spécifique Tontorrez', sessions:{
+  1:REST,
+  2:S('Seuil','14','','5\'00-5\'10"/km','4×15\' seuil / 3\' récup','intense'),
+  3:S('EF trail','14','400','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'),
+  6:S('Sortie longue trail','28','1000','5\'30-6\'00"/km','Ravitaillement obligatoire. Terrain montagneux si possible','long'),
+  0:S('Récup','10','300','6\'30"/km','','easy'),
+}},
+// ── S15: Feb 2-8 — Build ─────────────────────────────────────────────────
+{w:15, km:65, elev:1200, focus:'Consolidation du volume élevé', sessions:{
+  1:REST,
+  2:S('Fractionné + côtes','12','','4\'20-4\'40"/km','6×1\'30 côtes D+ / 2\'30 récup','intense'),
+  3:S('EF trail','14','500','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue','26','900','5\'15-5\'45"/km','Test nutrition longue durée 4h+','long'),
+  0:S('Récup','10','300','6\'30"/km','','easy'),
+}},
+// ── S16: Feb 9-15 — Pic de charge ────────────────────────────────────────
+{w:16, km:75, elev:1600, focus:'Pic de charge — dernière grosse semaine avant spé Tontorrez', sessions:{
+  1:REST,
+  2:S('Seuil','14','','5\'00"/km','4×20\' seuil / 3\' récup — exigeant','intense'),
+  3:S('EF trail','15','600','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'),
+  6:S('Sortie longue trail','30','1200','5\'30-6\'00"/km','Simulation Tontorrez : terrain pyrénéen si possible','long'),
+  0:S('Récup','10','400','6\'30"/km','','easy'),
+}},
+// ── S17: Feb 16-22 — Spécifique Tontorrez ────────────────────────────────
+{w:17, km:68, elev:1800, focus:'Spécifique Tontorrez — D+ pyrénéen, allure race', sessions:{
+  1:REST,
+  2:S('Côtes spécifiques','12','','côtes 5×3\' montée / 4\' récup','Répétitions longues, simulation montées Tontorrez','intense'),
+  3:S('EF trail D+','14','800','5\'45-6\'30"/km','Maximum de D+ possible (Pyrénées, Massif Central)','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue trail','28','1500','5\'45-6\'15"/km','Terrain similaire Tontorrez, nutrition race-day','long'),
+  0:S('Récup','10','500','6\'30"/km','','easy'),
+}},
+// ── S18: Feb 23 - Mar 1 — Spécifique Tontorrez ───────────────────────────
+{w:18, km:63, elev:1600, focus:'Dernière grande semaine avant réduction', sessions:{
+  1:REST,
+  2:S('Seuil côtes','12','','5\'00-5\'10"/km','2×25\' seuil sur terrain vallonné','intense'),
+  3:S('EF trail D+','13','600','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue','26','1200','5\'30-6\'00"/km','Ravitaillement, gestion course longue','long'),
+  0:S('Récup','10','400','6\'30"/km','','easy'),
+}},
+// ── S19: Mar 2-8 — Réduction volume ──────────────────────────────────────
+{w:19, km:55, elev:1200, focus:'Début affûtage — volume réduit, intensité maintenue', sessions:{
+  1:REST,
+  2:S('Fractionné','10','','4\'15-4\'30"/km','8×1\' / 1\'30 récup','intense'),
+  3:S('EF trail','12','400','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Trail mi-long','22','1000','5\'30-6\'00"/km','Allure course Tontorrez sur 2/3 du parcours','easy'),
+  0:S('Récup','8','300','6\'30"/km','','easy'),
+}},
+// ── S20: Mar 9-15 — Taper Tontorrez ──────────────────────────────────────
+{w:20, km:38, elev:700, focus:'Affûtage fort — repose-toi, tu es prêt', sessions:{
+  1:REST,
+  2:S('Activation + courtes accé','8','','5\'50"/km + 6×100m','Séance courte pour garder les jambes vives','intense'),
+  3:S('EF trail','8','300','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('Shakeout','5','','6\'00"/km','','easy'),
+  6:S('Trail court','14','500','5\'30"/km','Dernière sortie avec allure race sur 20min','easy'),
+  0:S('Repos','2','','','10\' footing très facile max','rest'),
+}},
+// ── S21: Mar 16-22 — RACE WEEK TONTORREZ (Mar 20) ───────────────────────
+{w:21, km:98, elev:2200, race:'🏁 Tontorrez — 85km ~2000m D+', focus:'Semaine de course — maximum de repos', sessions:{
+  1:REST,
+  2:S('Activation légère','5','','6\'15"/km','20\' très facile + 4×30" dynamiques','easy'),
+  3:S('Shakeout','3','','6\'15"/km','15\' footing + exercices','easy'),
+  4:REST,
+  5:S('Repos / 10\' jogging','','','','Prépare le matériel, hydrate-toi','rest'),
+  6:S('🏁 TONTORREZ','85','2000','allure longue durée','B-race — test 85km, gestion effort, nutrition','race'),
+  0:REST,
+}},
+// ── S22-23: Récupération Tontorrez ────────────────────────────────────────
+{w:22, km:20, elev:100, focus:'Récupération totale après 85km', sessions:{
+  1:REST, 2:S('Marche','','','','','rest'), 3:S('Footing','5','','7\'00"/km','','easy'),
+  4:S('Mobilité','','','','','strength'), 5:REST, 6:S('Footing','10','','6\'30"/km','','easy'), 0:REST,
+}},
+{w:23, km:30, elev:200, focus:'Transition — corps en cours de récup', sessions:{
+  1:REST, 2:S('EF','8','','6\'15"/km','','easy'), 3:S('Trail facile','8','100','6\'00"/km','','easy'),
+  4:RENFO, 5:REST, 6:S('Trail','12','100','5\'45"/km','','easy'), 0:S('Récup','6','','6\'30"/km','','easy'),
+}},
+// ── S24: Apr 3-9 — Début construction Ultra-Marin ────────────────────────
+{w:24, km:48, elev:500, focus:'Redémarrage — base Ultra-Marin (100km, Jun 19)', sessions:{
+  1:REST,
+  2:S('Côtes','10','','côtes 8×1\'30 / 2\'30','Réactivation musculaire','intense'),
+  3:S('EF trail','12','300','5\'45"/km','','easy'),
+  4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'),
+  6:S('Sortie longue','16','200','5\'30"/km','Reprise progressive','long'),
+  0:S('Récup','8','','6\'30"/km','','easy'),
+}},
+// ── S25-29: Construction Ultra-Marin ─────────────────────────────────────
+{w:25, km:58, elev:800, focus:'Build régulier — semaine 25', sessions:{
+  1:REST, 2:S('Seuil','12','','5\'05"/km','3×15\' seuil','intense'),
+  3:S('EF trail','13','400','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'), 6:S('Long','22','600','5\'30"/km','','long'),
+  0:S('Récup','10','200','6\'30"/km','','easy'),
+}},
+{w:26, km:65, elev:1000, focus:'Build — semaine 26', sessions:{
+  1:REST, 2:S('Fractionné','12','','4\'15-4\'30"/km','10×1\' / 1\'30','intense'),
+  3:S('EF trail','14','500','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'), 6:S('Long trail','26','800','5\'30"/km','','long'),
+  0:S('Récup','10','300','6\'30"/km','','easy'),
+}},
+{w:27, km:45, elev:600, focus:'Régénération — semaine 27', sessions:{
+  1:REST, 2:S('EF','8','','5\'50"/km','','easy'), 3:S('EF trail','10','200','5\'45"/km','','easy'),
+  4:RENFO, 5:S('EF','6','','6\'00"/km','','easy'), 6:S('Trail mi-long','18','400','5\'30"/km','','easy'),
+  0:S('Récup','8','','6\'30"/km','','easy'),
+}},
+{w:28, km:72, elev:1400, focus:'Grande semaine — pic de charge', sessions:{
+  1:REST, 2:S('Seuil','14','','5\'00"/km','4×20\' / 3\' récup','intense'),
+  3:S('EF trail','15','600','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'), 6:S('Long trail','30','1000','5\'20-5\'45"/km','5-6h en mouvement, ravito','long'),
+  0:S('Récup','10','400','6\'30"/km','','easy'),
+}},
+{w:29, km:75, elev:1600, focus:'2ème grande semaine', sessions:{
+  1:REST, 2:S('Côtes longues','14','','côtes 6×3\' / 4\' récup','','intense'),
+  3:S('EF trail','16','700','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'), 6:S('Long trail','32','1200','5\'20"/km','Test matériel 100km','long'),
+  0:S('Récup','10','400','6\'30"/km','','easy'),
+}},
+// ── S30-33: Spécifique Ultra-Marin ────────────────────────────────────────
+{w:30, km:80, elev:1800, focus:'Spécifique Ultra-Marin — simulation conditions race', sessions:{
+  1:REST, 2:S('Seuil côtes','14','','5\'00"/km','','intense'),
+  3:S('EF trail D+','16','800','5\'45"/km','Terrain côtier si possible (Bretagne = bonus)','easy'), 4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'), 6:S('Long trail','34','1400','5\'30-6\'00"/km','6-7h. Nutrition race-day obligatoire','long'),
+  0:S('Récup','12','500','6\'30"/km','','easy'),
+}},
+{w:31, km:75, elev:1600, focus:'Maintien volume élevé', sessions:{
+  1:REST, 2:S('Fractionné','12','','4\'15"/km','8×1\'30 / 2\' récup','intense'),
+  3:S('EF trail','14','600','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','10','','6\'00"/km','','easy'), 6:S('Long trail','30','1200','5\'20"/km','','long'),
+  0:S('Récup','10','400','6\'30"/km','','easy'),
+}},
+{w:32, km:55, elev:1000, focus:'Régénération — semaine 32', sessions:{
+  1:REST, 2:S('EF','10','','5\'50"/km','','easy'), 3:S('EF trail','12','400','5\'45"/km','','easy'),
+  4:RENFO, 5:S('EF','8','','6\'00"/km','','easy'), 6:S('Trail mi-long','22','800','5\'30"/km','','easy'),
+  0:S('Récup','8','200','6\'30"/km','','easy'),
+}},
+{w:33, km:48, elev:800, focus:'Affûtage Ultra-Marin — réduction progressive', sessions:{
+  1:REST, 2:S('Activation','10','','5\'45"/km + 6×100m','Courte, qualité','intense'),
+  3:S('EF trail','10','400','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','6','','6\'00"/km','','easy'), 6:S('Trail court','18','700','5\'30"/km','Allure race 30min','easy'),
+  0:S('Récup','6','','6\'30"/km','','easy'),
+}},
+// ── S34: RACE WEEK ULTRA-MARIN (Jun 19) ──────────────────────────────────
+{w:34, km:108, elev:1600, race:'🏁 Ultra-Marin — 100km D+', focus:'Semaine de course — maximum de repos', sessions:{
+  1:REST, 2:S('Activation','5','','6\'15"/km','','easy'), 3:S('Shakeout','3','','6\'15"/km','','easy'),
+  4:REST, 5:S('Repos','','','','Prépare le matériel','rest'),
+  6:S('🏁 ULTRA-MARIN','100','~1600','allure ultra','A-race — 100km, gestion 14-18h','race'),
+  0:REST,
+}},
+// ── S35-37: Récupération Ultra-Marin ─────────────────────────────────────
+{w:35, km:15, elev:50, focus:'Récupération totale après 100km', sessions:{
+  1:REST, 2:S('Marche','','','','','rest'), 3:S('Footing','5','','7\'00"/km','','easy'),
+  4:S('Mobilité','','','','','strength'), 5:REST, 6:S('Footing','8','','6\'30"/km','','easy'), 0:REST,
+}},
+{w:36, km:25, elev:100, focus:'Reprise très douce', sessions:{
+  1:REST, 2:S('EF','6','','6\'30"/km','','easy'), 3:S('Trail facile','8','100','6\'15"/km','','easy'),
+  4:RENFO, 5:REST, 6:S('Trail','10','','6\'00"/km','','easy'), 0:S('Récup','4','','6\'30"/km','','easy'),
+}},
+{w:37, km:38, elev:300, focus:'Transition GRP — corps en cours de récup', sessions:{
+  1:REST, 2:S('EF','8','','6\'00"/km','','easy'), 3:S('EF trail','10','150','5\'45"/km','','easy'),
+  4:RENFO, 5:REST, 6:S('Trail','16','150','5\'45"/km','','easy'), 0:S('Récup','6','','6\'30"/km','','easy'),
+}},
+// ── S38-43: Construction GRP ──────────────────────────────────────────────
+{w:38, km:50, elev:700, focus:'Construction GRP (120km, Aug 20) — reparti', sessions:{
+  1:REST, 2:S('Côtes','10','','côtes 8×2\' / 3\' récup','','intense'),
+  3:S('EF trail','12','400','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'), 6:S('Long trail','18','500','5\'30"/km','','long'),
+  0:S('Récup','8','200','6\'30"/km','','easy'),
+}},
+{w:39, km:62, elev:1200, focus:'Build GRP — D+ pyrénéen', sessions:{
+  1:REST, 2:S('Seuil côtes','12','','5\'00"/km','3×20\' seuil terrain varié','intense'),
+  3:S('EF trail','14','600','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'), 6:S('Long Pyrénées','24','1200','5\'30-6\'00"/km','D+ maximum pyrénéen','long'),
+  0:S('Récup','10','400','6\'30"/km','','easy'),
+}},
+{w:40, km:70, elev:2000, focus:'Spécifique GRP — terrain Pyrénées', sessions:{
+  1:REST, 2:S('Côtes longues','14','','côtes 5×4\' / 4\' récup','Simulation montées GRP','intense'),
+  3:S('EF trail D+','15','1000','5\'45-6\'30"/km','Terrain pyrénéen, altitude si possible','easy'), 4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'), 6:S('Long trail Pyrénées','30','1800','5\'30-6\'00"/km','7-8h, ravito, nuit si possible','long'),
+  0:S('Récup','10','600','6\'30"/km','','easy'),
+}},
+{w:41, km:55, elev:1200, focus:'Réduction douce — début taper GRP', sessions:{
+  1:REST, 2:S('Fractionné','10','','4\'20"/km','6×1\'30 / 2\' récup','intense'),
+  3:S('EF trail','12','500','5\'45"/km','','easy'), 4:RENFO,
+  5:S('EF','8','','6\'00"/km','','easy'), 6:S('Trail mi-long','22','900','5\'30"/km','','easy'),
+  0:S('Récup','8','300','6\'30"/km','','easy'),
+}},
+{w:42, km:38, elev:700, focus:'Affûtage GRP — tu es prêt', sessions:{
+  1:REST, 2:S('Activation','8','','5\'50"/km + 6×100m accé','','intense'),
+  3:S('EF trail','8','300','5\'45"/km','','easy'), 4:RENFO,
+  5:S('Shakeout','5','','6\'00"/km','','easy'), 6:S('Trail court','14','500','5\'30"/km','Allure race 20min','easy'),
+  0:S('Repos','2','','','','rest'),
+}},
+// ── S43: RACE WEEK GRP (Aug 20) ───────────────────────────────────────────
+{w:43, km:128, elev:6000, race:'🏁 Grand Raid Pyrénées — 120km ~6000m D+', focus:'Semaine de course — tu as fait le travail, fais-lui confiance', sessions:{
+  1:REST, 2:S('Activation légère','5','','6\'15"/km','','easy'), 3:S('Shakeout','3','','6\'15"/km','','easy'),
+  4:REST, 5:S('Repos','','','','Check matériel, briefing','rest'),
+  6:S('🏁 GRAND RAID PYRÉNÉES','120','6000','allure ultra','A+-race — 120km 6000m D+, l\'objectif ultime','race'),
+  0:REST,
+}},
+];
+
+function getPhase(w){
+  return PHASES.find(p=>w>=p.weeks[0]&&w<=p.weeks[1])||{label:'',color:'#8892b0'};
+}
+
+function weekDates(w){
+  // S1 starts Oct 27, 2026 (Monday)
+  const s1 = new Date('2026-10-27');
+  const start = new Date(s1); start.setDate(s1.getDate()+(w-1)*7);
+  const end = new Date(start); end.setDate(start.getDate()+6);
+  const fmt = d=>d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+  return {start, end, label:`${fmt(start)} – ${fmt(end)}`};
+}
+
+function currentWeekNum(){
+  const s1 = new Date('2026-10-27'); s1.setHours(0,0,0,0);
+  const now = new Date(); now.setHours(0,0,0,0);
+  const diff = Math.floor((now-s1)/86400000);
+  return Math.max(1, Math.min(43, Math.floor(diff/7)+1));
+}
+
+const DAYS_FR2 = {1:'Lun',2:'Mar',3:'Mer',4:'Jeu',5:'Ven',6:'Sam',0:'Dim'};
+const TYPE_COLOR = {rest:'var(--text3)',easy:'var(--accent2)',intense:'var(--accent)',long:'var(--amber)',strength:'#CE93D8',race:'var(--red)'};
+const CHIP_COLORS = {km:'prog-tag-km',elev:'prog-tag-elev'};
+
+function renderProgramme(acts){
+  const cur = currentWeekNum();
+  let html = '';
+  let lastPhase = null;
+
+  PLAN_WEEKS.forEach(wk=>{
+    const phase = getPhase(wk.w);
+    const {start, label: dateLabel} = weekDates(wk.w);
+    const isCur = wk.w === cur;
+
+    // Phase header
+    if(!lastPhase || lastPhase.label !== phase.label){
+      lastPhase = phase;
+      html += `<div class="prog-phase-hdr">
+        <div class="prog-phase-dot" style="background:${phase.color}"></div>
+        <div class="prog-phase-label" style="color:${phase.color}">${phase.label}</div>
+      </div>`;
+    }
+
+    // Week done chips
+    const monday = new Date(start);
+    monday.setHours(0,0,0,0);
+    const sunday = new Date(monday); sunday.setDate(monday.getDate()+7);
+    const weekActs = acts ? acts.filter(a=>{
+      const d=new Date(a.start_date_local); return d>=monday&&d<sunday;
+    }) : [];
+    const realKm = weekActs.reduce((s,a)=>s+(a.distance||0)/1000,0);
+    const realElev = weekActs.reduce((s,a)=>s+(a.total_elevation_gain||0),0);
+    const isDone = wk.w < cur || (wk.w===cur && weekActs.length>0);
+
+    let meta = `<span class="prog-tag prog-tag-km">${wk.km} km</span>`;
+    if(wk.elev) meta += `<span class="prog-tag prog-tag-elev">${wk.elev}m D+</span>`;
+    if(wk.race) meta += `<span class="prog-tag prog-tag-race">Course</span>`;
+    if(isDone && realKm>0) meta += `<span class="prog-tag prog-tag-done">✓ ${realKm.toFixed(0)}km réels</span>`;
+
+    // Sessions
+    let sessHtml = '';
+    [1,2,3,4,5,6,0].forEach(dow=>{
+      const s = wk.sessions[dow];
+      if(!s) return;
+      const color = TYPE_COLOR[s.type]||'var(--text2)';
+      let chips = '';
+      if(s.km) chips += `<span class="prog-tag prog-tag-km">${s.km} km</span>`;
+      if(s.elev) chips += `<span class="prog-tag prog-tag-elev">${s.elev}m D+</span>`;
+      if(s.pace) chips += `<span class="prog-tag" style="background:#ffffff10;color:var(--accent)">${s.pace}</span>`;
+
+      // Strava match for this day
+      const dayDate = new Date(monday); dayDate.setDate(monday.getDate()+(dow===0?6:dow-1));
+      const dayAct = acts ? acts.find(a=>new Date(a.start_date_local).toDateString()===dayDate.toDateString()) : null;
+      let doneRow = '';
+      if(dayAct){
+        const rk=((dayAct.distance||0)/1000).toFixed(1), re=Math.round(dayAct.total_elevation_gain||0), rp=fmtP(dayAct.average_speed);
+        doneRow = `<div class="prog-done-row">
+          <span class="prog-tag prog-tag-done">${rk}km</span>
+          ${re?`<span class="prog-tag prog-tag-done">${re}m D+</span>`:''}
+          <span class="prog-tag prog-tag-done">${rp}/km</span>
+          <span style="font-size:10px;color:var(--green);margin-left:2px">✓ ${dayAct.name}</span>
+        </div>`;
+      }
+
+      sessHtml += `<div class="prog-day">
+        <div class="prog-day-label" style="color:${color}">${DAYS_FR2[dow]}</div>
+        <div class="prog-day-body">
+          <div class="prog-day-name">${s.nom}</div>
+          ${chips?`<div class="prog-day-chips">${chips}</div>`:''}
+          ${s.notes?`<div class="prog-day-notes">${s.notes}</div>`:''}
+          ${doneRow}
+        </div>
+      </div>`;
+    });
+
+    html += `<div class="prog-week${isCur?' current':''}${wk.race?' race-week':''}" id="pw${wk.w}">
+      <div class="prog-week-hdr" onclick="toggleWeek(${wk.w})">
+        <span class="prog-week-num">S${wk.w}</span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="prog-week-dates">${dateLabel}</span>
+            ${isCur?'<span class="current-badge">CETTE SEMAINE</span>':''}
+          </div>
+          <div class="prog-week-meta" style="margin-top:4px">${meta}</div>
+        </div>
+        <span class="prog-week-arrow">▶</span>
+      </div>
+      ${wk.focus?`<div class="prog-week-focus">${wk.focus}</div>`:''}
+      <div class="prog-sessions">${sessHtml}</div>
+    </div>`;
+  });
+
+  document.getElementById('prog-out').innerHTML = html;
+  // Auto-open current week
+  const el = document.getElementById(`pw${cur}`);
+  if(el){ el.classList.add('open'); el.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+
+function toggleWeek(w){
+  document.getElementById(`pw${w}`).classList.toggle('open');
 }
 
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
@@ -1011,7 +1506,7 @@ async function goTo(id,btn){
     if(id==='dashboard') await renderDash();
     if(id==='activites') await renderActs();
     if(id==='saison') renderSaison();
-    if(id==='terrain') renderLocHist();
+    if(id==='programme') renderProgramme(_acts);
   }
 }
 
