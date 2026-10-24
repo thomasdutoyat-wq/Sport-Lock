@@ -239,6 +239,26 @@ body {
 .reco-row strong{color:var(--text)}
 .reco-note{font-size:10px;color:var(--amber);margin-top:8px;font-style:italic}
 
+/* ── Planning semaine ─────────────────────────────────────────────── */
+.wplan{display:grid;grid-template-columns:1fr;gap:6px;margin-top:4px}
+.wday{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;background:var(--surf2);border-left:3px solid var(--border)}
+.wday.today{border-left-color:var(--accent);background:var(--surf3)}
+.wday.done{border-left-color:var(--green)}
+.wday.rest{opacity:.6}
+.wday-label{font-size:11px;font-weight:700;color:var(--text2);min-width:28px;text-transform:uppercase;letter-spacing:.5px}
+.wday.today .wday-label{color:var(--accent)}
+.wday-name{font-size:11px;font-weight:700;color:var(--text2);min-width:26px}
+.wday-session{flex:1;font-size:12px;color:var(--text)}
+.wday-session em{font-style:normal;font-size:10px;color:var(--text2)}
+.wday-check{font-size:16px;margin-left:auto}
+.wday-strava{font-size:10px;color:var(--green);margin-left:6px}
+/* edit mode */
+.wplan-edit{display:grid;grid-template-columns:1fr;gap:6px;margin-top:4px}
+.wplan-edit-row{display:flex;align-items:center;gap:8px}
+.wplan-edit-row label{font-size:11px;font-weight:700;color:var(--text2);min-width:36px;text-transform:uppercase}
+.wplan-edit-row input{flex:1;background:var(--surf2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;color:var(--text);font-size:12px;font-family:'Inter',system-ui,sans-serif}
+.wplan-edit-row input:focus{outline:none;border-color:var(--accent)}
+
 /* ── Login ──────────────────────────────────────────────────────────── */
 #login{
   display:flex;
@@ -596,6 +616,88 @@ function last7(acts){
   };
 }
 
+// ── PLANNING SEMAINE ──────────────────────────────────────────────────────
+const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+const DEFAULT_PLAN = {
+  1:'Fractionné / VMA',
+  2:'Endurance fondamentale',
+  3:'Muscu / gainage',
+  4:'Trail technique',
+  5:'Repos actif / mobilité',
+  6:'Sortie longue trail',
+  0:'Récupération facile'
+};
+
+function getPlan(){
+  try{ const s=localStorage.getItem('week_plan'); return s?JSON.parse(s):DEFAULT_PLAN; }
+  catch(e){ return DEFAULT_PLAN; }
+}
+function savePlan(p){ try{ localStorage.setItem('week_plan',JSON.stringify(p)); }catch(e){} }
+
+function renderWeekPlan(acts){
+  const plan = getPlan();
+  const now = new Date();
+  // Get Mon-Sun of current week
+  const dayOfWeek = now.getDay(); // 0=Sun
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - (dayOfWeek===0?6:dayOfWeek-1));
+  monday.setHours(0,0,0,0);
+
+  // Which days had a Strava activity this week?
+  const doneSet = new Set();
+  if(acts) acts.forEach(a=>{
+    const d = new Date(a.start_date_local);
+    if(d >= monday) doneSet.add(d.getDay());
+  });
+
+  const rows = [1,2,3,4,5,6,0].map(dow=>{
+    const date = new Date(monday);
+    date.setDate(monday.getDate() + (dow===0?6:dow-1));
+    const isToday = date.toDateString() === now.toDateString();
+    const isDone = doneSet.has(dow);
+    const isRest = !plan[dow] || plan[dow].toLowerCase().includes('repos') || plan[dow].toLowerCase().includes('récup');
+    const cls = ['wday', isToday?'today':'', isDone?'done':'', isRest&&!isDone?'rest':''].filter(Boolean).join(' ');
+    const check = isDone ? '✅' : (isToday ? '🎯' : '');
+    const dayNum = date.getDate();
+    const stravaLabel = isDone ? '<span class="wday-strava">✓ Strava</span>' : '';
+    return `<div class="${cls}">
+      <span class="wday-label">${DAYS_FR[dow]}</span>
+      <span style="font-size:10px;color:var(--text3);min-width:18px">${dayNum}</span>
+      <span class="wday-session">${plan[dow]||'Repos'}${stravaLabel}</span>
+      <span class="wday-check">${check}</span>
+    </div>`;
+  });
+  return `<div class="wplan">${rows.join('')}</div>`;
+}
+
+let _editMode = false;
+function toggleEditPlan(){
+  _editMode = !_editMode;
+  const plan = getPlan();
+  const container = document.getElementById('week-plan-view');
+  const btn = document.getElementById('plan-edit-btn');
+  if(_editMode){
+    btn.textContent = 'Sauvegarder';
+    btn.style.color = 'var(--accent)';
+    const fields = [1,2,3,4,5,6,0].map(dow=>`
+      <div class="wplan-edit-row">
+        <label>${DAYS_FR[dow]}</label>
+        <input id="pday-${dow}" value="${plan[dow]||''}" placeholder="Repos">
+      </div>`).join('');
+    container.innerHTML = `<div class="wplan-edit">${fields}</div>`;
+  } else {
+    const newPlan = {};
+    [1,2,3,4,5,6,0].forEach(dow=>{
+      const el = document.getElementById(`pday-${dow}`);
+      if(el) newPlan[dow] = el.value.trim();
+    });
+    savePlan(newPlan);
+    btn.textContent = 'Éditer';
+    btn.style.color = '';
+    container.innerHTML = renderWeekPlan(_acts);
+  }
+}
+
 // ── DASHBOARD ─────────────────────────────────────────────────────────────
 const RACES=[
   {name:"Soli'Trail Bouliac",date:'2026-12-05',dist:'~30km',obj:'Plaisir · Reprise',c:'#3ecf72',lv:'C'},
@@ -652,6 +754,13 @@ async function renderDash(){
         <div class="chart-wrap"><canvas id="chart-load"></canvas></div>
       </div>
       <div class="card"><div class="card-title">Prochaines courses</div>${miniRaces}</div>
+      <div class="card" id="week-plan-card">
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+          Planning de la semaine
+          <button onclick="toggleEditPlan()" id="plan-edit-btn" style="background:var(--surf3);border:1px solid var(--border);color:var(--text2);padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer">Éditer</button>
+        </div>
+        <div id="week-plan-view">${renderWeekPlan(acts)}</div>
+      </div>
       <div class="card"><div class="card-title">Activités récentes</div>${recentActs}</div>
     </div>`;
 
