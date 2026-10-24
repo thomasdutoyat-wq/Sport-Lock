@@ -1205,14 +1205,77 @@ const TYPE_COLOR = {rest:'var(--text3)',easy:'var(--accent2)',intense:'var(--acc
 const CHIP_COLORS = {km:'prog-tag-km',elev:'prog-tag-elev'};
 
 // ── OVERRIDES localStorage ─────────────────────────────────────────────────
-// Calcule les distances de session en appliquant les ratios (course + semaine fine)
+// Gradient max réaliste (m D+ / km) par type de séance
+// Au-delà → c'est de la rando, pas de l'entraînement trail
+const MAX_GRAD = { rest:0, strength:0, easy:75, intense:90, long:110, race:999 };
+
 function scaledSessions(wk, ratioKm, ratioElev){
-  const out = {};
-  for(const [dow, s] of Object.entries(wk.sessions)){
-    const newKm   = s.km   ? Math.round(parseFloat(s.km  )*ratioKm *10)/10 : '';
-    const newElev = s.elev ? Math.round(parseFloat(s.elev)*ratioElev)       : '';
-    out[dow] = { ...s, km: newKm?String(newKm):'', elev: newElev?String(newElev):'' };
+  const dows = [1,2,3,4,5,6,0];
+
+  // 1ère passe : scale km + D+, calcule l'overflow de chaque séance
+  const data = {};
+  let totalOverflow = 0;
+  dows.forEach(dow=>{
+    const s = wk.sessions[dow]; if(!s){ data[dow]=null; return; }
+    const maxGrad = MAX_GRAD[s.type] ?? 90;
+    const km    = s.km   ? Math.round(parseFloat(s.km)  *ratioKm *10)/10 : 0;
+    let   elev  = s.elev ? Math.round(parseFloat(s.elev)*ratioElev)      : 0;
+    let   overflow = 0;
+    if(km && elev){
+      const cap = Math.round(km * maxGrad);
+      if(elev > cap){ overflow = elev - cap; elev = cap; }
+    }
+    totalOverflow += overflow;
+    data[dow] = { s, km, elev, maxGrad, overflow };
+  });
+
+  // 2ème passe : redistribue l'overflow sur les séances à fort potentiel D+
+  // Priorité : long → easy avec elev → intense avec elev
+  // On allonge le km si besoin pour absorber
+  if(totalOverflow > 0){
+    const absorbers = dows
+      .filter(d=> data[d] && data[d].km > 0 && ['long','easy','intense'].includes(data[d].s.type))
+      .sort((a,b)=>{
+        const order = {long:0, easy:1, intense:2};
+        return (order[data[a].s.type]??9)-(order[data[b].s.type]??9);
+      });
+
+    let remaining = totalOverflow;
+    absorbers.forEach(dow=>{
+      if(remaining <= 0) return;
+      const d = data[dow];
+      // Capacité restante sans allonger
+      const cap    = Math.round(d.km * d.maxGrad);
+      const freeSlot = Math.max(0, cap - d.elev);
+      const absorb1  = Math.min(freeSlot, remaining);
+      d.elev    += absorb1;
+      remaining -= absorb1;
+      // Si encore du surplus, on allonge le km (sans limite — mieux vaut 35km que perdre du D+)
+      if(remaining > 0 && absorbers.indexOf(dow) === absorbers.length-1 || absorbers.length===1){
+        const extraKm = Math.ceil((remaining / d.maxGrad)*10)/10;
+        d.km       = Math.round((d.km + extraKm)*10)/10;
+        d.elev    += remaining;
+        remaining  = 0;
+      }
+    });
+    // Si plusieurs absorbeurs, deuxième tour pour le reste
+    if(remaining > 0 && absorbers.length > 0){
+      const d = data[absorbers[0]];
+      const extraKm = Math.ceil((remaining / d.maxGrad)*10)/10;
+      d.km   = Math.round((d.km + extraKm)*10)/10;
+      d.elev += remaining;
+    }
   }
+
+  // Construire le résultat final
+  const out = {};
+  dows.forEach(dow=>{
+    const d = data[dow]; if(!d){ return; }
+    out[dow] = { ...d.s,
+      km:   d.km   ? String(d.km)   : '',
+      elev: d.elev ? String(d.elev) : '',
+    };
+  });
   return out;
 }
 
