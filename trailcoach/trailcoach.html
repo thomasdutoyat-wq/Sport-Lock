@@ -1212,65 +1212,42 @@ const MAX_GRAD = { rest:0, strength:0, easy:75, intense:90, long:110, race:999 }
 function scaledSessions(wk, ratioKm, ratioElev){
   const dows = [1,2,3,4,5,6,0];
 
-  // 1ère passe : scale km + D+, calcule l'overflow de chaque séance
+  // Passe 1 : scale tout, plafonne chaque séance à son gradient max, accumule l'overflow
   const data = {};
-  let totalOverflow = 0;
+  let overflow = 0;
   dows.forEach(dow=>{
-    const s = wk.sessions[dow]; if(!s){ data[dow]=null; return; }
+    const s = wk.sessions[dow];
+    if(!s){ data[dow]=null; return; }
     const maxGrad = MAX_GRAD[s.type] ?? 90;
-    const km    = s.km   ? Math.round(parseFloat(s.km)  *ratioKm *10)/10 : 0;
-    let   elev  = s.elev ? Math.round(parseFloat(s.elev)*ratioElev)      : 0;
-    let   overflow = 0;
-    if(km && elev){
-      const cap = Math.round(km * maxGrad);
-      if(elev > cap){ overflow = elev - cap; elev = cap; }
+    const km   = s.km   ? Math.round(parseFloat(s.km)  *ratioKm *10)/10 : 0;
+    let   elev = s.elev ? Math.round(parseFloat(s.elev)*ratioElev)      : 0;
+    if(km && elev && elev > km*maxGrad){
+      overflow += elev - Math.round(km*maxGrad);
+      elev = Math.round(km*maxGrad);
     }
-    totalOverflow += overflow;
-    data[dow] = { s, km, elev, maxGrad, overflow };
+    data[dow] = { s, km, elev, maxGrad };
   });
 
-  // 2ème passe : redistribue l'overflow sur les séances à fort potentiel D+
-  // Priorité : long → easy avec elev → intense avec elev
-  // On allonge le km si besoin pour absorber
-  if(totalOverflow > 0){
-    const absorbers = dows
-      .filter(d=> data[d] && data[d].km > 0 && ['long','easy','intense'].includes(data[d].s.type))
-      .sort((a,b)=>{
-        const order = {long:0, easy:1, intense:2};
-        return (order[data[a].s.type]??9)-(order[data[b].s.type]??9);
-      });
+  // Passe 2 : tout l'overflow → sortie longue en priorité, sinon plus grosse sortie easy/intense
+  // On allonge le km de la séance cible jusqu'à ce que le gradient soit OK (≤ maxGrad)
+  if(overflow > 0){
+    const absorberDow =
+      dows.find(d=> data[d] && data[d].s.type==='long') ??
+      dows.filter(d=> data[d] && ['easy','intense'].includes(data[d].s.type) && data[d].km>0)
+          .sort((a,b)=> data[b].km - data[a].km)[0];
 
-    let remaining = totalOverflow;
-    absorbers.forEach(dow=>{
-      if(remaining <= 0) return;
-      const d = data[dow];
-      // Capacité restante sans allonger
-      const cap    = Math.round(d.km * d.maxGrad);
-      const freeSlot = Math.max(0, cap - d.elev);
-      const absorb1  = Math.min(freeSlot, remaining);
-      d.elev    += absorb1;
-      remaining -= absorb1;
-      // Si encore du surplus, on allonge le km (sans limite — mieux vaut 35km que perdre du D+)
-      if(remaining > 0 && absorbers.indexOf(dow) === absorbers.length-1 || absorbers.length===1){
-        const extraKm = Math.ceil((remaining / d.maxGrad)*10)/10;
-        d.km       = Math.round((d.km + extraKm)*10)/10;
-        d.elev    += remaining;
-        remaining  = 0;
-      }
-    });
-    // Si plusieurs absorbeurs, deuxième tour pour le reste
-    if(remaining > 0 && absorbers.length > 0){
-      const d = data[absorbers[0]];
-      const extraKm = Math.ceil((remaining / d.maxGrad)*10)/10;
-      d.km   = Math.round((d.km + extraKm)*10)/10;
-      d.elev += remaining;
+    if(absorberDow != null){
+      const d = data[absorberDow];
+      d.elev += overflow;
+      // Étend le km autant que nécessaire pour respecter le gradient
+      const minKm = Math.ceil((d.elev / d.maxGrad)*10)/10;
+      if(minKm > d.km) d.km = minKm;
     }
   }
 
-  // Construire le résultat final
   const out = {};
   dows.forEach(dow=>{
-    const d = data[dow]; if(!d){ return; }
+    const d = data[dow]; if(!d) return;
     out[dow] = { ...d.s,
       km:   d.km   ? String(d.km)   : '',
       elev: d.elev ? String(d.elev) : '',
