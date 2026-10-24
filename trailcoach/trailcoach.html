@@ -252,6 +252,13 @@ body {
 .wday-session em{font-style:normal;font-size:10px;color:var(--text2)}
 .wday-check{font-size:16px;margin-left:auto}
 .wday-strava{font-size:10px;color:var(--green);margin-left:6px}
+.wday-targets{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.wday-real{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.wchip{display:inline-block;font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;font-family:var(--mono)}
+.wchip-km{background:#5b8cf520;color:var(--accent2)}
+.wchip-elev{background:#f5a62320;color:var(--amber)}
+.wchip-pace{background:#ff613020;color:var(--accent)}
+.wchip-done{background:#3ecf7220;color:var(--green)}
 /* edit mode */
 .wplan-edit{display:grid;grid-template-columns:1fr;gap:6px;margin-top:4px}
 .wplan-edit-row{display:flex;align-items:center;gap:8px}
@@ -618,53 +625,92 @@ function last7(acts){
 
 // ── PLANNING SEMAINE ──────────────────────────────────────────────────────
 const DAYS_FR = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+// Plan par défaut — chaque jour : {nom, km, elev (D+), pace (allure cible), type}
+// type: 'easy'|'intense'|'long'|'rest'|'strength'
 const DEFAULT_PLAN = {
-  1:'Fractionné / VMA',
-  2:'Endurance fondamentale',
-  3:'Muscu / gainage',
-  4:'Trail technique',
-  5:'Repos actif / mobilité',
-  6:'Sortie longue trail',
-  0:'Récupération facile'
+  1:{ nom:'Repos / Mobilité', km:'', elev:'', pace:'', type:'rest' },
+  2:{ nom:'Fractionné VMA', km:'10', elev:'', pace:'4\'00-4\'20"/km', type:'intense' },
+  3:{ nom:'Endurance fondamentale', km:'12', elev:'', pace:'5\'30-6\'00"/km', type:'easy' },
+  4:{ nom:'Muscu + gainage', km:'', elev:'', pace:'', type:'strength' },
+  5:{ nom:'Trail technique', km:'15', elev:'400', pace:'5\'00-5\'30"/km', type:'easy' },
+  6:{ nom:'Sortie longue trail', km:'25', elev:'800', pace:'6\'00-6\'30"/km', type:'long' },
+  0:{ nom:'Récupération facile', km:'8', elev:'', pace:'6\'30-7\'00"/km', type:'easy' }
 };
 
 function getPlan(){
-  try{ const s=localStorage.getItem('week_plan'); return s?JSON.parse(s):DEFAULT_PLAN; }
-  catch(e){ return DEFAULT_PLAN; }
+  try{
+    const s=localStorage.getItem('week_plan2');
+    if(s){ const p=JSON.parse(s); if(p[1]&&typeof p[1]==='object') return p; }
+    return DEFAULT_PLAN;
+  }catch(e){ return DEFAULT_PLAN; }
 }
-function savePlan(p){ try{ localStorage.setItem('week_plan',JSON.stringify(p)); }catch(e){} }
+function savePlan(p){ try{ localStorage.setItem('week_plan2',JSON.stringify(p)); }catch(e){} }
+
+// Trouve l'activité Strava du jour (si elle existe)
+function actForDay(acts, date){
+  if(!acts) return null;
+  return acts.find(a=>{
+    const d=new Date(a.start_date_local);
+    return d.toDateString()===date.toDateString();
+  })||null;
+}
 
 function renderWeekPlan(acts){
   const plan = getPlan();
   const now = new Date();
-  // Get Mon-Sun of current week
-  const dayOfWeek = now.getDay(); // 0=Sun
+  const dayOfWeek = now.getDay();
   const monday = new Date(now);
   monday.setDate(now.getDate() - (dayOfWeek===0?6:dayOfWeek-1));
   monday.setHours(0,0,0,0);
-
-  // Which days had a Strava activity this week?
-  const doneSet = new Set();
-  if(acts) acts.forEach(a=>{
-    const d = new Date(a.start_date_local);
-    if(d >= monday) doneSet.add(d.getDay());
-  });
 
   const rows = [1,2,3,4,5,6,0].map(dow=>{
     const date = new Date(monday);
     date.setDate(monday.getDate() + (dow===0?6:dow-1));
     const isToday = date.toDateString() === now.toDateString();
-    const isDone = doneSet.has(dow);
-    const isRest = !plan[dow] || plan[dow].toLowerCase().includes('repos') || plan[dow].toLowerCase().includes('récup');
-    const cls = ['wday', isToday?'today':'', isDone?'done':'', isRest&&!isDone?'rest':''].filter(Boolean).join(' ');
-    const check = isDone ? '✅' : (isToday ? '🎯' : '');
-    const dayNum = date.getDate();
-    const stravaLabel = isDone ? '<span class="wday-strava">✓ Strava</span>' : '';
+    const s = plan[dow] || DEFAULT_PLAN[dow];
+    const act = actForDay(acts, date);
+    const isDone = !!act;
+    const isRest = s.type==='rest'||s.type==='strength';
+
+    const cls = ['wday',
+      isToday?'today':'',
+      isDone?'done':'',
+      (isRest&&!isDone)?'rest':''
+    ].filter(Boolean).join(' ');
+
+    // Cibles
+    const chips = [];
+    if(s.km)   chips.push(`<span class="wchip wchip-km">${s.km} km</span>`);
+    if(s.elev) chips.push(`<span class="wchip wchip-elev">${s.elev}m D+</span>`);
+    if(s.pace) chips.push(`<span class="wchip wchip-pace">${s.pace}</span>`);
+
+    // Réalisé Strava
+    let stravaRow = '';
+    if(act){
+      const realKm = ((act.distance||0)/1000).toFixed(1);
+      const realElev = Math.round(act.total_elevation_gain||0);
+      const realPace = fmtP(act.average_speed);
+      stravaRow = `<div class="wday-real">
+        <span class="wchip wchip-done">${realKm} km</span>
+        ${realElev?`<span class="wchip wchip-done">${realElev}m D+</span>`:''}
+        <span class="wchip wchip-done">${realPace}/km</span>
+        <span style="font-size:10px;color:var(--green);margin-left:2px">✓ ${act.name}</span>
+      </div>`;
+    }
+
+    const icon = isDone?'✅': isToday?'🎯': s.type==='rest'?'😴': s.type==='strength'?'💪':'';
     return `<div class="${cls}">
-      <span class="wday-label">${DAYS_FR[dow]}</span>
-      <span style="font-size:10px;color:var(--text3);min-width:18px">${dayNum}</span>
-      <span class="wday-session">${plan[dow]||'Repos'}${stravaLabel}</span>
-      <span class="wday-check">${check}</span>
+      <div style="display:flex;align-items:center;gap:8px;width:100%">
+        <span class="wday-label">${DAYS_FR[dow]}<br><span style="font-size:9px;color:var(--text3)">${date.getDate()}</span></span>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <span class="wday-session">${s.nom}</span>
+            <span>${icon}</span>
+          </div>
+          <div class="wday-targets">${chips.join('')}</div>
+          ${stravaRow}
+        </div>
+      </div>
     </div>`;
   });
   return `<div class="wplan">${rows.join('')}</div>`;
@@ -679,17 +725,28 @@ function toggleEditPlan(){
   if(_editMode){
     btn.textContent = 'Sauvegarder';
     btn.style.color = 'var(--accent)';
-    const fields = [1,2,3,4,5,6,0].map(dow=>`
-      <div class="wplan-edit-row">
-        <label>${DAYS_FR[dow]}</label>
-        <input id="pday-${dow}" value="${plan[dow]||''}" placeholder="Repos">
-      </div>`).join('');
+    const fields = [1,2,3,4,5,6,0].map(dow=>{
+      const s=plan[dow]||{};
+      return `<div class="wplan-edit-row" style="align-items:flex-start;flex-direction:column;gap:4px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <label style="color:var(--accent);font-size:11px">${DAYS_FR[dow]}</label>
+        <input id="pnom-${dow}" value="${s.nom||''}" placeholder="Séance" style="width:100%">
+        <div style="display:flex;gap:6px;width:100%">
+          <input id="pkm-${dow}"   value="${s.km||''}"   placeholder="km"       style="flex:1">
+          <input id="pelev-${dow}" value="${s.elev||''}" placeholder="D+ (m)"   style="flex:1">
+          <input id="ppace-${dow}" value="${s.pace||''}" placeholder="Allure"   style="flex:2">
+        </div>
+      </div>`;
+    }).join('');
     container.innerHTML = `<div class="wplan-edit">${fields}</div>`;
   } else {
     const newPlan = {};
     [1,2,3,4,5,6,0].forEach(dow=>{
-      const el = document.getElementById(`pday-${dow}`);
-      if(el) newPlan[dow] = el.value.trim();
+      const nom  = document.getElementById(`pnom-${dow}`)?.value.trim()||'';
+      const km   = document.getElementById(`pkm-${dow}`)?.value.trim()||'';
+      const elev = document.getElementById(`pelev-${dow}`)?.value.trim()||'';
+      const pace = document.getElementById(`ppace-${dow}`)?.value.trim()||'';
+      const old  = plan[dow]||{};
+      newPlan[dow] = { nom, km, elev, pace, type: old.type||'easy' };
     });
     savePlan(newPlan);
     btn.textContent = 'Éditer';
