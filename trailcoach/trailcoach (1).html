@@ -1,0 +1,870 @@
+<title>TrailCoach Thomas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+/* ── Design system: committed dark ──────────────────────────────────────── */
+/* Layout: mobile-first single-column, sticky top nav on desktop, bottom nav on phone */
+:root {
+  --bg:       #0b0e18;
+  --surf:     #13172a;
+  --surf2:    #1c2138;
+  --surf3:    #242945;
+  --border:   #2d3454;
+  --accent:   #ff6130;   /* trail orange */
+  --accent2:  #5b8cf5;   /* sky blue */
+  --green:    #3ecf72;
+  --amber:    #f5a623;
+  --red:      #f04f4f;
+  --text:     #e8ecf4;
+  --text2:    #8892b0;
+  --text3:    #4a5270;
+  --mono:     'DM Mono', monospace;
+  color-scheme: dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body {
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  padding-left: max(0px, env(safe-area-inset-left,0px));
+  padding-right: max(0px, env(safe-area-inset-right,0px));
+  padding-bottom: calc(68px + env(safe-area-inset-bottom,0px));
+  overflow-x:hidden;
+}
+
+/* ── Bottom nav (phone) ─────────────────────────────────────────────── */
+.nav {
+  position:fixed; bottom:0; left:0; right:0;
+  background:var(--surf);
+  border-top:1px solid var(--border);
+  display:flex;
+  z-index:200;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);
+  padding-right:env(safe-area-inset-right,0px);
+}
+.nav-btn {
+  flex:1; padding:10px 4px 10px;
+  background:none; border:none;
+  color:var(--text3); font-size:10px; font-weight:500;
+  cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:3px;
+  transition:color .15s;
+  font-family:'Inter',system-ui,sans-serif;
+}
+.nav-btn svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.nav-btn.on{color:var(--accent)}
+.nav-btn.on svg{stroke:var(--accent)}
+
+/* ── Sections ───────────────────────────────────────────────────────── */
+.sec{display:none;padding:0 max(16px,env(safe-area-inset-left,16px)) 24px;padding-top:0}
+.sec.on{display:block}
+
+/* ── Header band ────────────────────────────────────────────────────── */
+.page-hdr {
+  padding: 20px max(16px,env(safe-area-inset-left,16px)) 16px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:16px;
+  background:var(--surf);
+  position:relative; overflow:hidden;
+}
+.page-hdr::after{
+  content:''; position:absolute; top:-60px; right:-60px;
+  width:200px; height:200px; border-radius:50%;
+  background:var(--accent); opacity:.06; pointer-events:none;
+}
+.hdr-row{display:flex;align-items:center;gap:12px}
+.avatar{
+  width:42px; height:42px; border-radius:50%;
+  background:var(--surf2); border:2px solid var(--accent);
+  overflow:hidden; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.hdr-name{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.hdr-sub{font-size:11px;color:var(--text2);margin-top:1px}
+.logout-btn{
+  margin-left:auto; background:none;
+  border:1px solid var(--border); color:var(--text2);
+  border-radius:6px; padding:5px 10px; font-size:10px; cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif; transition:.15s;
+}
+.logout-btn:hover{border-color:var(--text2)}
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.card{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px}
+.card-title{font-size:10px;text-transform:uppercase;letter-spacing:.9px;color:var(--text2);font-weight:600;margin-bottom:12px}
+
+/* ── Stat tiles ─────────────────────────────────────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--surf2);border-radius:10px;padding:12px 10px;min-width:0}
+.stat-n{font-size:20px;font-weight:800;color:var(--text);line-height:1;font-variant-numeric:tabular-nums}
+.stat-n em{font-size:12px;font-weight:400;color:var(--text2);font-style:normal}
+.stat-l{font-size:9px;color:var(--text2);margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+
+/* ── Activity row ───────────────────────────────────────────────────── */
+.act{
+  background:var(--surf2); border-radius:10px; padding:12px;
+  margin-bottom:7px; cursor:pointer; border-left:3px solid transparent;
+  transition:border-color .15s, transform .15s;
+}
+.act:hover{border-left-color:var(--accent);transform:translateX(2px)}
+.act-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px}
+.act-name{font-size:13px;font-weight:600;min-width:0}
+.act-date{font-size:10px;color:var(--text2);white-space:nowrap;margin-left:8px}
+.act-meta{display:flex;gap:10px;flex-wrap:wrap}
+.act-m{font-size:11px;color:var(--text2)}
+.act-m strong{color:var(--text);font-weight:600}
+.act-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)}
+.act-detail.open{display:block}
+.tag{display:inline-block;padding:1px 7px;border-radius:20px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-left:6px;vertical-align:middle}
+.tag-trail{background:#ff613022;color:var(--accent)}
+.tag-run{background:#5b8cf522;color:var(--accent2)}
+.tag-ride{background:#3ecf7222;color:var(--green)}
+
+/* ── Chart ──────────────────────────────────────────────────────────── */
+.chart-wrap{position:relative;height:150px;margin-top:4px}
+
+/* ── Mini race row ──────────────────────────────────────────────────── */
+.race-mini{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.race-mini:last-child{border-bottom:none}
+.race-days{text-align:center;min-width:42px}
+.race-days .n{font-size:20px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.race-days .l{font-size:9px;color:var(--text2)}
+.race-info-block{flex:1;min-width:0}
+.race-nm{font-size:12px;font-weight:600}
+.race-meta{font-size:10px;color:var(--text2);margin-top:1px}
+.race-badge{font-size:10px;font-weight:700;white-space:nowrap}
+
+/* ── Race big card ──────────────────────────────────────────────────── */
+.race-card{
+  background:var(--surf2); border-radius:12px; padding:14px;
+  margin-bottom:10px; border-left:4px solid var(--c);
+}
+.race-card-nm{font-size:15px;font-weight:800;letter-spacing:-.2px;margin-bottom:3px}
+.race-card-meta{font-size:11px;color:var(--text2);margin-bottom:10px}
+.race-cd{display:flex;gap:7px;margin-bottom:10px}
+.cd-box{background:var(--surf);border-radius:8px;padding:7px 10px;text-align:center;min-width:44px}
+.cd-n{font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums;color:var(--c)}
+.cd-l{font-size:8px;color:var(--text2);text-transform:uppercase;margin-top:1px}
+.prog{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:8px}
+.prog-f{height:100%;border-radius:2px;background:var(--c);transition:.5s}
+.race-obj-line{font-size:10px;color:var(--text2);font-style:italic}
+
+/* ── Nutrition rows ─────────────────────────────────────────────────── */
+.tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.tabs::-webkit-scrollbar{display:none}
+.tab-btn{
+  padding:6px 14px; border-radius:20px;
+  border:1px solid var(--border); background:none;
+  color:var(--text2); font-size:12px; font-weight:500;
+  cursor:pointer; white-space:nowrap; transition:.15s;
+  font-family:'Inter',system-ui,sans-serif;
+}
+.tab-btn.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.tab-pane{display:none}.tab-pane.on{display:block}
+.nrow{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid var(--border)}
+.nrow:last-child{border-bottom:none}
+.ntime{font-size:11px;font-weight:700;color:var(--accent);min-width:30px;padding-top:1px;font-family:var(--mono)}
+.nboucle{font-size:10px;color:var(--text3);min-width:22px;padding-top:2px;font-family:var(--mono)}
+.nbody{flex:1;min-width:0}
+.nfood{font-size:12px;font-weight:600;margin-bottom:2px}
+.ndetail{font-size:10px;color:var(--text2)}
+.ng{
+  font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;
+  background:var(--surf3);white-space:nowrap;margin-left:auto;
+  font-family:var(--mono);
+}
+.ng.ok{color:var(--green)}.ng.warn{color:var(--amber)}.ng.low{color:var(--red)}
+
+/* ── Gut log ────────────────────────────────────────────────────────── */
+.gut-form{background:var(--surf2);border-radius:10px;padding:14px;margin-bottom:12px}
+.gut-form label{font-size:10px;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.gut-form input,
+.gut-form select,
+.gut-form textarea{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);border-radius:7px;padding:9px 11px;
+  font-size:13px;margin-bottom:10px;outline:none;
+  font-family:'Inter',system-ui,sans-serif; transition:.15s;
+}
+.gut-form input:focus,.gut-form select:focus,.gut-form textarea:focus{border-color:var(--accent2)}
+.gut-form textarea{height:58px;resize:none}
+.btn-outline{
+  background:var(--surf);border:1px solid var(--accent2);color:var(--accent2);
+  border-radius:8px;padding:9px 18px;font-size:12px;font-weight:600;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif; transition:.15s;
+}
+.btn-outline:hover{background:var(--accent2);color:#fff}
+.gut-entry{background:var(--surf2);border-radius:8px;padding:10px 12px;margin-bottom:6px;position:relative}
+.gut-entry-date{font-size:10px;color:var(--text2);margin-bottom:2px}
+.gut-entry-prod{font-size:12px;font-weight:600;margin-bottom:3px}
+.gut-entry-note{font-size:11px;color:var(--text2)}
+.gut-score{
+  position:absolute;top:10px;right:12px;
+  font-size:13px;font-weight:800;font-family:var(--mono);
+}
+.score-5,.score-4{color:var(--green)}
+.score-3{color:var(--amber)}
+.score-2,.score-1{color:var(--red)}
+
+/* ── Location ───────────────────────────────────────────────────────── */
+.loc-form{background:var(--surf2);border-radius:10px;padding:14px;margin-bottom:12px}
+.loc-form label{font-size:10px;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.loc-form input,.loc-form select{
+  width:100%;background:var(--bg);border:1px solid var(--border);
+  color:var(--text);border-radius:7px;padding:9px 11px;
+  font-size:13px;margin-bottom:10px;outline:none;
+  font-family:'Inter',system-ui,sans-serif; transition:.15s;
+}
+.loc-form input:focus,.loc-form select:focus{border-color:var(--accent)}
+.btn-accent{
+  background:var(--accent);color:#fff;border:none;border-radius:8px;
+  padding:11px 20px;font-size:13px;font-weight:600;cursor:pointer;width:100%;
+  font-family:'Inter',system-ui,sans-serif; transition:opacity .15s;
+}
+.btn-accent:hover{opacity:.9}
+.reco{background:var(--surf2);border-radius:10px;padding:14px;border-left:3px solid var(--accent2);margin-top:10px}
+.reco-title{font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:8px}
+.reco-row{font-size:12px;color:var(--text2);padding:3px 0}
+.reco-row strong{color:var(--text)}
+.reco-note{font-size:10px;color:var(--amber);margin-top:8px;font-style:italic}
+
+/* ── Login ──────────────────────────────────────────────────────────── */
+#login{
+  display:none;
+  flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;padding:32px max(16px,env(safe-area-inset-left,16px));
+  text-align:center;
+}
+.login-icon{font-size:52px;margin-bottom:20px}
+.login-title{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.login-sub{font-size:14px;color:var(--text2);margin-bottom:36px;line-height:1.6;max-width:320px}
+.strava-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  background:#FC4C02;color:#fff;border:none;
+  border-radius:12px;padding:15px 28px;font-size:15px;font-weight:700;cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;
+}
+.strava-btn svg{width:20px;height:20px;fill:#fff;flex-shrink:0}
+
+/* ── Alert ──────────────────────────────────────────────────────────── */
+.alert{
+  background:#ff613018;border:1px solid #ff613035;
+  border-radius:8px;padding:10px 13px;font-size:12px;
+  color:var(--text);margin-bottom:12px;line-height:1.5;
+}
+.alert strong{color:var(--accent)}
+
+/* ── Spinner ────────────────────────────────────────────────────────── */
+.spin{display:inline-block;width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:40px;color:var(--text2);font-size:12px}
+
+/* ── Section title ──────────────────────────────────────────────────── */
+.sec-title{font-size:18px;font-weight:800;letter-spacing:-.4px;padding:20px 0 14px}
+
+/* ── Hist row ───────────────────────────────────────────────────────── */
+.hist-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px}
+.hist-row:last-child{border-bottom:none}
+
+/* Rules list */
+.rule-row{padding:9px 0;border-bottom:1px solid var(--border)}
+.rule-row:last-child{border-bottom:none}
+.rule-head{font-size:12px;font-weight:600;margin-bottom:2px}
+.rule-sub{font-size:11px;color:var(--text2)}
+
+@media(min-width:640px){
+  body{padding-bottom:0;padding-top:56px}
+  .nav{top:0;bottom:auto;border-top:none;border-bottom:1px solid var(--border);padding-top:0}
+  .nav-btn{flex-direction:row;gap:6px;font-size:12px;padding:15px 20px;justify-content:center}
+  .nav-btn svg{width:17px;height:17px}
+}
+</style>
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-icon">🏔️</div>
+  <h1 class="login-title">TrailCoach</h1>
+  <p class="login-sub">Ton dashboard ultra-trail personnel.<br>Connecte ton compte Strava pour commencer.</p>
+  <button class="strava-btn" onclick="loginWithStrava()">
+    <svg viewBox="0 0 24 24"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.598h4.172L10.463 0l-7 13.828h4.169"/></svg>
+    Connecter Strava
+  </button>
+  <div id="err-msg" style="margin-top:14px;font-size:12px;color:#f04f4f;min-height:18px"></div>
+</div>
+
+<!-- APP -->
+<div id="app" hidden>
+
+  <nav class="nav">
+    <button class="nav-btn on" onclick="goTo('dashboard',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button class="nav-btn" onclick="goTo('activites',this)">
+      <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Activités
+    </button>
+    <button class="nav-btn" onclick="goTo('nutrition',this)">
+      <svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+      Nutrition
+    </button>
+    <button class="nav-btn" onclick="goTo('saison',this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Saison
+    </button>
+    <button class="nav-btn" onclick="goTo('terrain',this)">
+      <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Terrain
+    </button>
+  </nav>
+
+  <!-- ── DASHBOARD ─────────────────────────────────────────────────── -->
+  <section class="sec on" id="sec-dashboard">
+    <div id="dash-out"><div class="loading"><div class="spin"></div>Connexion Strava…</div></div>
+  </section>
+
+  <!-- ── ACTIVITÉS ─────────────────────────────────────────────────── -->
+  <section class="sec" id="sec-activites">
+    <div class="sec-title" style="padding-left:max(16px,env(safe-area-inset-left,16px))">Mes activités</div>
+    <div id="act-out" style="padding:0 max(16px,env(safe-area-inset-left,16px))">
+      <div class="loading"><div class="spin"></div>Chargement…</div>
+    </div>
+  </section>
+
+  <!-- ── NUTRITION ─────────────────────────────────────────────────── -->
+  <section class="sec" id="sec-nutrition">
+    <div style="padding:0 max(16px,env(safe-area-inset-left,16px))">
+      <div class="sec-title">Nutrition</div>
+      <div class="tabs">
+        <button class="tab-btn on" onclick="tab('race24h',this)">Plan 24h</button>
+        <button class="tab-btn" onclick="tab('gut',this)">Test intestin</button>
+        <button class="tab-btn" onclick="tab('regles',this)">Règles</button>
+      </div>
+
+      <!-- Plan 24h -->
+      <div class="tab-pane on" id="tp-race24h">
+        <div class="alert"><strong>Protocole Backyard / 24h</strong> · Cible max 60g/h jusqu'à validation intestinale en entraînement.</div>
+
+        <div class="card">
+          <div class="card-title">🌞 Journée 12h–19h · <span style="color:#CE93D8">Emilie</span></div>
+          <div class="nrow"><div class="ntime">12h</div><div class="nboucle">B1</div><div class="nbody"><div class="nfood">Sandwich jambon + banane</div><div class="ndetail">Eau + Saint-Yorre · 0 gel</div></div><div class="ng warn">~50g</div></div>
+          <div class="nrow"><div class="ntime">13h</div><div class="nboucle">B2</div><div class="nbody"><div class="nfood">Banane + dattes + 1 gel</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng ok">~75g</div></div>
+          <div class="nrow"><div class="ntime">14h</div><div class="nboucle">B3</div><div class="nbody"><div class="nfood">Sandwich fromage + banane</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng warn">~50g</div></div>
+          <div class="nrow"><div class="ntime">15h</div><div class="nboucle">B4</div><div class="nbody"><div class="nfood">Dattes + barre + 1 gel</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng ok">~64g</div></div>
+          <div class="nrow"><div class="ntime">16h</div><div class="nboucle">B5</div><div class="nbody"><div class="nfood">⭐ Quiche + dattes + 1 gel</div><div class="ndetail">SY · repas plaisir</div></div><div class="ng low">~45g ⚠</div></div>
+          <div class="nrow"><div class="ntime">17h</div><div class="nboucle">B6</div><div class="nbody"><div class="nfood">Banane + dattes + 1 gel</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng ok">~75g</div></div>
+          <div class="nrow"><div class="ntime">18h</div><div class="nboucle">B7</div><div class="nbody"><div class="nfood">Bouillon + sandwich + barre + purée</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~66g</div></div>
+          <div class="nrow"><div class="ntime">19h</div><div class="nboucle">B8</div><div class="nbody"><div class="nfood">Riz au lait + purée Naak</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~72g</div></div>
+        </div>
+
+        <div class="card" style="background:#14192e">
+          <div class="card-title">🌆 Soirée 20h–22h · <span style="color:#81C784">Matias</span></div>
+          <div class="nrow"><div class="ntime">20h</div><div class="nboucle">B9</div><div class="nbody"><div class="nfood">Bouillon + purée Naak + 1 gel</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~66g</div></div>
+          <div class="nrow"><div class="ntime">21h</div><div class="nboucle">B10</div><div class="nbody"><div class="nfood">Bouillon + compote + barre + 1 gel</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~64g</div></div>
+          <div class="nrow"><div class="ntime">22h</div><div class="nboucle">B11</div><div class="nbody"><div class="nfood">Bouillon + riz au lait + purée Naak</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~72g</div></div>
+        </div>
+
+        <div class="card" style="background:#0d1225">
+          <div class="card-title" style="color:#90CAF9">🌙 Nuit 23h–05h · <span style="color:#90CAF9">JM + Suzette</span></div>
+          <div class="nrow"><div class="ntime">23h</div><div class="nboucle">B12</div><div class="nbody"><div class="nfood">☕ Café + bouillon + compote + 2 gels</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~80g</div></div>
+          <div class="nrow"><div class="ntime">00h</div><div class="nboucle">B13</div><div class="nbody"><div class="nfood">Bouillon + 2 gels + purée Naak</div><div class="ndetail">250ml Coca + 250ml SY</div></div><div class="ng ok">~82g</div></div>
+          <div class="nrow"><div class="ntime">01h</div><div class="nboucle">B14</div><div class="nbody"><div class="nfood">Bouillon + riz au lait + purée Naak</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~72g</div></div>
+          <div class="nrow"><div class="ntime">02h</div><div class="nboucle">B15</div><div class="nbody"><div class="nfood">Bouillon + compote + barre + 1 gel</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~64g</div></div>
+          <div class="nrow"><div class="ntime">03h</div><div class="nboucle">B16</div><div class="nbody"><div class="nfood">☕ Café + bouillon + 2 gels + purée</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~82g</div></div>
+          <div class="nrow"><div class="ntime">04h</div><div class="nboucle">B17</div><div class="nbody"><div class="nfood">Bouillon + riz au lait + purée Naak</div><div class="ndetail">250ml Coca + 250ml SY</div></div><div class="ng ok">~72g</div></div>
+          <div class="nrow"><div class="ntime">05h</div><div class="nboucle">B18</div><div class="nbody"><div class="nfood">Bouillon + compote + barre + 1 gel</div><div class="ndetail">500ml SY</div></div><div class="ng ok">~64g</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">🌅 Matin 06h–11h · <span style="color:#CE93D8">Emilie</span></div>
+          <div class="nrow"><div class="ntime">06h</div><div class="nboucle">B19</div><div class="nbody"><div class="nfood">⭐ Œufs + pain + purée Naak</div><div class="ndetail">Eau + SY</div></div><div class="ng ok">~62g</div></div>
+          <div class="nrow"><div class="ntime">07h</div><div class="nboucle">B20</div><div class="nbody"><div class="nfood">Banane + barre + 1 gel</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng ok">~69g</div></div>
+          <div class="nrow"><div class="ntime">08h</div><div class="nboucle">B21</div><div class="nbody"><div class="nfood">Sandwich + banane</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng warn">~55g</div></div>
+          <div class="nrow"><div class="ntime">09h</div><div class="nboucle">B22</div><div class="nbody"><div class="nfood">Dattes + purée + 1 gel</div><div class="ndetail">250ml eau + 250ml SY</div></div><div class="ng ok">~72g</div></div>
+          <div class="nrow"><div class="ntime">10h</div><div class="nboucle">B23</div><div class="nbody"><div class="nfood">Banane + barre + 1 gel</div><div class="ndetail">250ml Coca + 250ml SY</div></div><div class="ng ok">~69g</div></div>
+          <div class="nrow"><div class="ntime">11h</div><div class="nboucle">B24</div><div class="nbody"><div class="nfood">🎉 Ce que tu veux + 1 gel</div><div class="ndetail">Dernière boucle !</div></div><div class="ng warn">~30g+</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">📦 Stock minimum</div>
+          <div class="nrow"><div class="nbody"><div class="nfood">Gels 30g glucides</div></div><div class="ng">20 gels</div></div>
+          <div class="nrow"><div class="nbody"><div class="nfood">Barres 14g glucides</div></div><div class="ng">8 barres</div></div>
+          <div class="nrow"><div class="nbody"><div class="nfood">Purées Naak 22g</div></div><div class="ng">10 purées</div></div>
+          <div class="nrow"><div class="nbody"><div class="nfood">Saint-Yorre</div></div><div class="ng">12–15 L</div></div>
+          <div class="nrow"><div class="nbody"><div class="nfood">Bouillon cube</div></div><div class="ng">× 20</div></div>
+          <div class="nrow"><div class="nbody"><div class="nfood">Coca-Cola</div></div><div class="ng">1.5 L</div></div>
+        </div>
+      </div>
+
+      <!-- Test intestin -->
+      <div class="tab-pane" id="tp-gut">
+        <div class="alert"><strong>Journal des tests intestin</strong> · Note tes sensations après chaque sortie longue avec gels. Objectif : 3 tests avant Tontorrez (mars 2027).</div>
+        <div class="gut-form">
+          <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px">Ajouter un test</div>
+          <label>Date</label>
+          <input type="date" id="gut-date">
+          <label>Produits testés</label>
+          <input type="text" id="gut-prod" placeholder="ex : 2 gels Maurten 100 + SY">
+          <label>Score tolérance</label>
+          <select id="gut-score">
+            <option value="5">5 — Aucun problème</option>
+            <option value="4">4 — Léger inconfort</option>
+            <option value="3">3 — Inconfort modéré</option>
+            <option value="2">2 — Nausées</option>
+            <option value="1">1 — Vomissements / arrêt</option>
+          </select>
+          <label>Notes</label>
+          <textarea id="gut-notes" placeholder="Durée de l'effort, conditions, observations…"></textarea>
+          <button class="btn-outline" onclick="saveGut()">Enregistrer ce test</button>
+        </div>
+        <div id="gut-list"></div>
+      </div>
+
+      <!-- Règles -->
+      <div class="tab-pane" id="tp-regles">
+        <div class="card">
+          <div class="card-title">⚡ Règles absolues course</div>
+          <div class="rule-row"><div class="rule-head">Manger à chaque boucle</div><div class="rule-sub">Même sans faim — crampes garanties sinon</div></div>
+          <div class="rule-row"><div class="rule-head">500ml minimum par boucle</div><div class="rule-sub">SY prioritaire la nuit — sodium vital</div></div>
+          <div class="rule-row"><div class="rule-head">FC max 150 bpm</div><div class="rule-sub">Marcher si dépassé — Z1 strict toute la course</div></div>
+          <div class="rule-row"><div class="rule-head">Transition base : 4–5 min max</div><div class="rule-sub">Asseoir, manger, repartir, pas plus</div></div>
+          <div class="rule-row"><div class="rule-head">Coca/café : après minuit seulement</div><div class="rule-sub">Garder l'effet boost pour la nuit profonde</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🎯 Allure cible 6.7km / 50 min</div>
+          <div class="rule-row"><div class="rule-head">Montées : marche obligatoire</div><div class="rule-sub">Même si ça monte peu</div></div>
+          <div class="rule-row"><div class="rule-head">Plat : trot 7'00"/km</div><div class="rule-sub">8.5 km/h sur la montre · jamais plus rapide</div></div>
+          <div class="rule-row"><div class="rule-head">Descentes : trot naturel</div><div class="rule-sub">Pas forcer, pas freiner</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">🧂 Sodium</div>
+          <div class="rule-row"><div class="rule-head">Saint-Yorre : 1 700 mg Na/L</div><div class="rule-sub">500ml/boucle = 850mg Na</div></div>
+          <div class="rule-row"><div class="rule-head">Bouillon cube : ~480mg Na</div><div class="rule-sub">1,2g sel par portion</div></div>
+          <div class="rule-row"><div class="rule-head">Cible : 500–700mg Na/heure</div><div class="rule-sub">SY seule suffit · bouillon = bonus nuit</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SAISON ────────────────────────────────────────────────────── -->
+  <section class="sec" id="sec-saison">
+    <div style="padding:0 max(16px,env(safe-area-inset-left,16px))">
+      <div class="sec-title">Calendrier saison</div>
+      <div id="races-out"></div>
+      <div class="card" style="margin-top:4px">
+        <div class="card-title">📈 Progression planifiée</div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding-top:2px">
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0"></div><div style="font-size:12px"><strong>Soli'Trail Bouliac · 5 déc 2026</strong><div style="font-size:11px;color:var(--text2);margin-top:1px">Plaisir, reprise post-Backyard</div></div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:8px;height:8px;border-radius:50%;background:var(--amber);flex-shrink:0"></div><div style="font-size:12px"><strong>Tontorrez 85km · mars 2027</strong><div style="font-size:11px;color:var(--text2);margin-top:1px">Test longue distance · validation nutrition</div></div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0"></div><div style="font-size:12px"><strong>Ultra-Marin 100km · juin 2027</strong><div style="font-size:11px;color:var(--text2);margin-top:1px">Objectif A saison</div></div></div>
+          <div style="display:flex;gap:10px;align-items:center"><div style="width:8px;height:8px;border-radius:50%;background:#CE93D8;flex-shrink:0"></div><div style="font-size:12px"><strong>Grand Raid Pyrénées 120km · août 2027</strong><div style="font-size:11px;color:var(--text2);margin-top:1px">Objectif A+ · sommet de saison</div></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TERRAIN ───────────────────────────────────────────────────── -->
+  <section class="sec" id="sec-terrain">
+    <div style="padding:0 max(16px,env(safe-area-inset-left,16px))">
+      <div class="sec-title">Terrain de la semaine</div>
+      <div class="alert">Entre où tu seras cette semaine pour adapter le D+ recommandé et les séances.</div>
+      <div class="loc-form">
+        <label>Zone / ville</label>
+        <input type="text" id="loc-city" placeholder="Bordeaux, Font-Romeu, Millau…">
+        <label>Type de terrain</label>
+        <select id="loc-terr">
+          <option value="plat">Plat (Bordeaux, plaine)</option>
+          <option value="vallon">Vallonné (collines, coteaux)</option>
+          <option value="montagne">Montagne (Pyrénées, Massif Central…)</option>
+          <option value="mixte">Mixte</option>
+        </select>
+        <label>Phase d'entraînement</label>
+        <select id="loc-phase">
+          <option value="recup">Récupération</option>
+          <option value="base">Base / Volume</option>
+          <option value="charge">Charge / Intensité</option>
+          <option value="taper">Affûtage pré-course</option>
+        </select>
+        <button class="btn-accent" onclick="calcReco()">Calculer mes recommandations</button>
+      </div>
+      <div id="loc-reco"></div>
+      <div class="card">
+        <div class="card-title">📍 Historique</div>
+        <div id="loc-hist" style="font-size:11px;color:var(--text2)">Aucune localisation enregistrée.</div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /app -->
+
+<script>
+const CID = '191521';
+const CSEC = '68001f8902c1f34da5cf4bd35ab120670bdd86f2';
+
+function redir(){ return 'https://thomasdutoyat-wq.github.io/Sport-Lock/trailcoach.html' }
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+function loginWithStrava(){
+  location.href = `https://www.strava.com/oauth/authorize?client_id=${CID}&response_type=code&redirect_uri=${encodeURIComponent(redir())}&approval_prompt=auto&scope=read,activity:read_all`;
+}
+async function exchangeCode(code){
+  const r = await fetch('https://www.strava.com/oauth/token',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({client_id:CID,client_secret:CSEC,code,grant_type:'authorization_code'})
+  });
+  const d = await r.json();
+  if(d.access_token){ storeTokens(d); return true; }
+  return false;
+}
+async function refreshIfNeeded(){
+  const exp = +( ls('strava_exp')||0 );
+  if(Date.now()/1000 < exp-300) return true;
+  const rt = ls('strava_rt');
+  if(!rt) return false;
+  const r = await fetch('https://www.strava.com/oauth/token',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({client_id:CID,client_secret:CSEC,grant_type:'refresh_token',refresh_token:rt})
+  });
+  const d = await r.json();
+  if(d.access_token){ storeTokens(d); return true; }
+  return false;
+}
+function storeTokens(d){
+  try{
+    localStorage.setItem('strava_at', d.access_token);
+    localStorage.setItem('strava_rt', d.refresh_token);
+    localStorage.setItem('strava_exp', d.expires_at);
+    if(d.athlete) localStorage.setItem('strava_ath', JSON.stringify(d.athlete));
+  }catch(e){}
+}
+function ls(k){ try{ return localStorage.getItem(k) }catch(e){ return null } }
+function loggedIn(){ return !!ls('strava_at') }
+function logout(){ ['strava_at','strava_rt','strava_exp','strava_ath'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}}); location.reload(); }
+
+// ── API ───────────────────────────────────────────────────────────────────
+async function api(path){
+  await refreshIfNeeded();
+  const r = await fetch(`https://www.strava.com/api/v3${path}`,{headers:{Authorization:`Bearer ${ls('strava_at')}`}});
+  return r.json();
+}
+let _acts=null, _ath=null;
+async function getData(){
+  if(!_ath){ const s=ls('strava_ath'); _ath = s ? JSON.parse(s) : await api('/athlete'); }
+  if(!_acts){ _acts = await api('/athlete/activities?per_page=50'); }
+  return {ath:_ath, acts:_acts};
+}
+
+// ── FORMAT ────────────────────────────────────────────────────────────────
+const fmtD = m => m>=1000 ? (m/1000).toFixed(1)+' km' : Math.round(m)+' m';
+const fmtT = s => { const h=Math.floor(s/3600),m=Math.floor((s%3600)/60); return h?`${h}h${String(m).padStart(2,'0')}`:`${m} min`; };
+const fmtP = mps => { if(!mps) return '—'; const spm=1/mps,min=Math.floor(spm/60),sec=Math.round(spm%60); return `${min}'${String(sec).padStart(2,'0')}"` };
+const fmtDate = iso => new Date(iso).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});
+const daysTo = ds => { const a=new Date(ds),b=new Date(); a.setHours(0,0,0,0); b.setHours(0,0,0,0); return Math.round((a-b)/86400000); };
+const tag = t => t==='TrailRun'?'<span class="tag tag-trail">Trail</span>':t==='Run'?'<span class="tag tag-run">Route</span>':(t==='Ride'||t==='VirtualRide')?'<span class="tag tag-ride">Vélo</span>':`<span class="tag tag-run">${t}</span>`;
+
+// ── WEEKLY LOAD ───────────────────────────────────────────────────────────
+function weeklyKm(acts, n=7){
+  const res=[];
+  const now=new Date();
+  for(let w=0;w<n;w++){
+    const e=new Date(now); e.setDate(e.getDate()-w*7);
+    const s=new Date(e); s.setDate(s.getDate()-7);
+    const ws=acts.filter(a=>{ const d=new Date(a.start_local); return d>=s&&d<e; });
+    res.unshift({l:w===0?'Cette sem':`S-${w+1}`, km:ws.reduce((acc,a)=>acc+a.summary.distance/1000,0)});
+  }
+  return res;
+}
+function last7(acts){
+  const c=Date.now()-7*86400000;
+  const ws=acts.filter(a=>new Date(a.start_local).getTime()>c);
+  return {
+    km:ws.reduce((s,a)=>s+a.summary.distance/1000,0),
+    elev:ws.reduce((s,a)=>s+a.summary.elevation_gain,0),
+    t:ws.reduce((s,a)=>s+a.summary.moving_time,0),
+    n:ws.length
+  };
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────────────────
+const RACES=[
+  {name:"Soli'Trail Bouliac",date:'2026-12-05',dist:'~30km',obj:'Plaisir · Reprise',c:'#3ecf72',lv:'C'},
+  {name:'Tontorrez',date:'2027-03-20',dist:'85km',obj:'Test longue distance',c:'#f5a623',lv:'B'},
+  {name:'Ultra-Marin',date:'2027-06-19',dist:'100km',obj:'Objectif A',c:'#f04f4f',lv:'A'},
+  {name:'Grand Raid Pyrénées',date:'2027-08-20',dist:'120km',obj:'Objectif A+',c:'#CE93D8',lv:'A+'},
+];
+
+async function renderDash(){
+  const {ath,acts}=await getData();
+  const s7=last7(acts);
+  const wk=weeklyKm(acts,6);
+
+  const miniRaces=RACES.map(r=>{
+    const d=daysTo(r.date); if(d<0) return '';
+    return `<div class="race-mini">
+      <div class="race-days"><div class="n" style="color:${r.c}">${d}</div><div class="l">jours</div></div>
+      <div class="race-info-block"><div class="race-nm">${r.name}</div><div class="race-meta">${r.dist} · ${r.obj}</div></div>
+      <div class="race-badge" style="color:${r.c}">Obj.${r.lv}</div>
+    </div>`;
+  }).join('');
+
+  const recentActs=acts.slice(0,5).map(a=>`
+    <div class="nrow"><div class="nbody">
+      <div class="nfood">${a.name}${tag(a.sport_type)}</div>
+      <div class="ndetail">${fmtDate(a.start_local)} · ${fmtD(a.summary.distance)} · ${Math.round(a.summary.elevation_gain)}m D+</div>
+    </div><div class="ng">${fmtT(a.summary.moving_time)}</div></div>
+  `).join('');
+
+  const avatarHtml = ath.profile_medium
+    ? `<img src="${ath.profile_medium}" alt="avatar" onerror="this.parentElement.textContent='🏃'">`
+    : '🏃';
+
+  document.getElementById('dash-out').innerHTML=`
+    <div class="page-hdr">
+      <div class="hdr-row">
+        <div class="avatar">${avatarHtml}</div>
+        <div>
+          <div class="hdr-name">${ath.firstname} ${ath.lastname}</div>
+          <div class="hdr-sub">${ath.city||'TrailCoach'} · Dashboard perso</div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Déco</button>
+      </div>
+    </div>
+    <div style="padding:0 max(16px,env(safe-area-inset-left,16px))">
+      <div class="card-title" style="padding-top:4px">7 derniers jours</div>
+      <div class="stats" style="margin-bottom:14px">
+        <div class="stat"><div class="stat-n">${s7.km.toFixed(1)}<em>km</em></div><div class="stat-l">Distance</div></div>
+        <div class="stat"><div class="stat-n">${Math.round(s7.elev)}<em>m</em></div><div class="stat-l">Dénivelé+</div></div>
+        <div class="stat"><div class="stat-n">${fmtT(s7.t)}</div><div class="stat-l">Temps</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Volume hebdomadaire — km</div>
+        <div class="chart-wrap"><canvas id="chart-load"></canvas></div>
+      </div>
+      <div class="card"><div class="card-title">Prochaines courses</div>${miniRaces}</div>
+      <div class="card"><div class="card-title">Activités récentes</div>${recentActs}</div>
+    </div>`;
+
+  const ctx=document.getElementById('chart-load').getContext('2d');
+  new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:wk.map(w=>w.l),
+      datasets:[{
+        data:wk.map(w=>+w.km.toFixed(1)),
+        backgroundColor:wk.map((_,i)=>i===wk.length-1?'#ff6130':'#ff613040'),
+        borderRadius:6, borderSkipped:false
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{grid:{color:'#2d345440'},ticks:{color:'#8892b0',font:{size:9,family:'Inter'}}},
+        y:{grid:{color:'#2d345440'},ticks:{color:'#8892b0',font:{size:9,family:'Inter'}},beginAtZero:true}
+      }
+    }
+  });
+}
+
+// ── ACTIVITÉS ─────────────────────────────────────────────────────────────
+async function renderActs(){
+  const {acts}=await getData();
+  document.getElementById('act-out').innerHTML=acts.slice(0,30).map((a,i)=>`
+    <div class="act" onclick="toggleAct(${i})">
+      <div class="act-top">
+        <div class="act-name">${a.name}${tag(a.sport_type)}</div>
+        <div class="act-date">${fmtDate(a.start_local)}</div>
+      </div>
+      <div class="act-meta">
+        <div class="act-m"><strong>${fmtD(a.summary.distance)}</strong></div>
+        <div class="act-m"><strong>${Math.round(a.summary.elevation_gain)}m</strong> D+</div>
+        <div class="act-m"><strong>${fmtT(a.summary.moving_time)}</strong></div>
+        <div class="act-m"><strong>${fmtP(a.summary.avg_speed)}/km</strong></div>
+      </div>
+      <div class="act-detail" id="ad-${i}">
+        <div class="act-meta" style="gap:14px;margin-top:4px">
+          ${a.summary.avg_cadence?`<div class="act-m"><strong>${Math.round(a.summary.avg_cadence*2)} spm</strong> cadence</div>`:''}
+          ${a.summary.total_calories?`<div class="act-m"><strong>${a.summary.total_calories} kcal</strong></div>`:''}
+          <div class="act-m"><strong>${fmtT(a.summary.elapsed_time)}</strong> total</div>
+        </div>
+        ${a.description?`<div style="font-size:10px;color:var(--text2);margin-top:6px;font-style:italic">"${a.description}"</div>`:''}
+      </div>
+    </div>
+  `).join('') || '<div class="loading" style="color:var(--text2)">Aucune activité.</div>';
+}
+function toggleAct(i){ const d=document.getElementById(`ad-${i}`); d.classList.toggle('open'); }
+
+// ── SAISON ────────────────────────────────────────────────────────────────
+function renderSaison(){
+  document.getElementById('races-out').innerHTML=RACES.map(r=>{
+    const d=daysTo(r.date), past=d<0;
+    const weeks=Math.ceil(Math.abs(d)/7);
+    const pct=past?100:Math.max(0,100-(d/350*100));
+    const cdParts=[{n:Math.floor(Math.abs(d)/7),l:'sem'},{n:Math.abs(d)%7,l:'j'}];
+    return `<div class="race-card" style="--c:${r.c};opacity:${past?.5:1}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+        <div>
+          <div class="race-card-nm">${past?'✓ ':''}${r.name}</div>
+          <div class="race-card-meta">${new Date(r.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'})} · ${r.dist}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px">
+          <div style="font-size:26px;font-weight:800;color:var(--c);line-height:1;font-variant-numeric:tabular-nums">${Math.abs(d)}</div>
+          <div style="font-size:9px;color:var(--text2)">${past?'terminé':'jours'}</div>
+        </div>
+      </div>
+      <div class="prog"><div class="prog-f" style="width:${pct}%"></div></div>
+      <div class="race-obj-line">
+        <span style="background:${r.c}22;color:${r.c};padding:1px 7px;border-radius:10px;font-size:9px;font-weight:700;font-style:normal;margin-right:4px">Obj.${r.lv}</span>
+        ${r.obj}${!past?` · <strong style="color:var(--text)">${weeks} semaines</strong>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── TERRAIN ───────────────────────────────────────────────────────────────
+const RECOS={
+  plat:{
+    recup:{dp:'0–200m/sem',s:['Footing Z1 30 min × 3','Stairmill ou marche côtes artificielles','Muscu légère'],n:'Compenser le manque de D+ par escaliers / stairmill'},
+    base:{dp:'300–500m/sem',s:['Footing Z2 45 min × 4','Côtes courtes × 8 reps','Sortie longue route 1h30'],n:'Chercher tout relief disponible : digues, talus, ponts'},
+    charge:{dp:'500–800m/sem',s:['Tempo 30 min Z3','Fractionnés côte 200m × 10','Sortie longue 2h D+ simulé'],n:'Envisager déplacement en zone vallonnée le week-end'},
+    taper:{dp:'<200m/sem',s:['2 footings 30 min Z1','1 courte qualité 20 min'],n:'Préserver les jambes, rien de nouveau'},
+  },
+  vallon:{
+    recup:{dp:'200–400m/sem',s:['Trail Z1 40 min × 2','Marche active 1h','Vélo ou natation'],n:'Profiter du relief sans forcer'},
+    base:{dp:'500–800m/sem',s:['Trail Z2 1h × 3','Sortie longue 2h D+ naturel','Côtes progressives'],n:'Idéal pour construire le foncier trail'},
+    charge:{dp:'800–1200m/sem',s:['Trail intensif 1h30','Côtes longues 400m × 6','Sortie longue 2h30 + test nutrition'],n:'Phase idéale pour tester la tolérance intestinale'},
+    taper:{dp:'300–500m/sem',s:['Trail léger 40 min × 2','Session qualité courte'],n:'Couper le volume, garder la vivacité'},
+  },
+  montagne:{
+    recup:{dp:'500–800m/sem',s:['Rando active 2h','Trail très lent D+ naturel 1h','Étirements altitude'],n:'Altitude → FC +10–15 bpm : courir à la sensation, pas au chrono'},
+    base:{dp:'1000–1500m/sem',s:['Trail Z2 1h30 D+','Rando longue 3h','Sortie qualité côte'],n:'Zone dorée pour progresser rapidement'},
+    charge:{dp:'1500–2500m/sem',s:['Trail long 3h D+800m','Côtes longues montagne','Back-to-back week-end'],n:'Simulation course → protocole nutrition obligatoire'},
+    taper:{dp:'400–700m/sem',s:['Trail léger 45 min × 2','Technique descente'],n:'Bénéficier des adaptations altitude sans se vider'},
+  },
+  mixte:{
+    recup:{dp:'200–500m/sem',s:['Sortie mixte Z1','Marche + trail léger'],n:'Alterner plat et relief doux'},
+    base:{dp:'600–1000m/sem',s:['Trail Z2 1h × 3','Sortie longue 2h','Session qualité courte'],n:'Varier les terrains = meilleure adaptation'},
+    charge:{dp:'1000–1500m/sem',s:['Trail intensif','Back-to-back week-end','Test nutrition sortie longue'],n:''},
+    taper:{dp:'<400m/sem',s:['Sorties légères × 2–3'],n:''},
+  }
+};
+
+function calcReco(){
+  const city=document.getElementById('loc-city').value.trim()||'Ta zone';
+  const terr=document.getElementById('loc-terr').value;
+  const phase=document.getElementById('loc-phase').value;
+  const r=RECOS[terr][phase];
+  document.getElementById('loc-reco').innerHTML=`
+    <div class="reco">
+      <div class="reco-title">📍 ${city}</div>
+      <div class="reco-row"><strong>D+ recommandé :</strong> ${r.dp}</div>
+      <div style="font-size:10px;color:var(--text2);margin:8px 0 4px;text-transform:uppercase;letter-spacing:.5px">Séances idéales</div>
+      ${r.s.map(s=>`<div class="reco-row">→ ${s}</div>`).join('')}
+      ${r.n?`<div class="reco-note">⚠ ${r.n}</div>`:''}
+    </div>`;
+  // Save
+  try{
+    const h=JSON.parse(localStorage.getItem('loc_hist')||'[]');
+    h.unshift({city,terr,phase,dp:r.dp,date:new Date().toLocaleDateString('fr-FR')});
+    if(h.length>8)h.pop();
+    localStorage.setItem('loc_hist',JSON.stringify(h));
+    renderLocHist();
+  }catch(e){}
+}
+function renderLocHist(){
+  try{
+    const h=JSON.parse(localStorage.getItem('loc_hist')||'[]');
+    const el=document.getElementById('loc-hist');
+    if(!el) return;
+    if(!h.length){ el.textContent='Aucune localisation enregistrée.'; return; }
+    el.innerHTML=h.map(e=>`<div class="hist-row"><div><strong style="color:var(--text)">${e.city}</strong> · ${e.terr} · ${e.phase}</div><div>${e.date}</div></div>`).join('');
+  }catch(e){}
+}
+
+// ── GUT LOG ───────────────────────────────────────────────────────────────
+function saveGut(){
+  const entry={
+    date:document.getElementById('gut-date').value||new Date().toISOString().split('T')[0],
+    prod:document.getElementById('gut-prod').value,
+    score:document.getElementById('gut-score').value,
+    notes:document.getElementById('gut-notes').value
+  };
+  try{
+    const log=JSON.parse(localStorage.getItem('gut_log')||'[]');
+    log.unshift(entry);
+    localStorage.setItem('gut_log',JSON.stringify(log));
+  }catch(e){}
+  document.getElementById('gut-prod').value='';
+  document.getElementById('gut-notes').value='';
+  renderGutLog();
+}
+function renderGutLog(){
+  try{
+    const log=JSON.parse(localStorage.getItem('gut_log')||'[]');
+    const el=document.getElementById('gut-list');
+    if(!el) return;
+    if(!log.length){ el.innerHTML='<div style="color:var(--text2);font-size:12px;text-align:center;padding:20px">Aucun test encore — commence dès ta prochaine sortie longue !</div>'; return; }
+    el.innerHTML=log.map(e=>`
+      <div class="gut-entry">
+        <div class="gut-entry-date">${e.date}</div>
+        <div class="gut-entry-prod">${e.prod||'—'}</div>
+        <div class="gut-entry-note">${e.notes||''}</div>
+        <div class="gut-score score-${e.score}">★ ${e.score}/5</div>
+      </div>`).join('');
+  }catch(e){}
+}
+
+// ── TABS & NAV ────────────────────────────────────────────────────────────
+function tab(id,btn){
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tp-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(id==='gut') renderGutLog();
+}
+
+const loaded={};
+async function goTo(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('sec-'+id).classList.add('on');
+  btn.classList.add('on');
+  if(!loaded[id]){
+    loaded[id]=true;
+    if(id==='dashboard') await renderDash();
+    if(id==='activites') await renderActs();
+    if(id==='saison') renderSaison();
+    if(id==='terrain') renderLocHist();
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+async function renderApp(){
+  document.getElementById('app').hidden=false;
+  await renderDash();
+}
+
+async function init(){
+  try{
+    const p=new URLSearchParams(location.search);
+    const code=p.get('code');
+    if(code){
+      history.replaceState({},'',location.pathname);
+      await exchangeCode(code);
+    }
+    if(loggedIn()){ await renderApp(); }
+    else { document.getElementById('login').style.display='flex'; }
+  }catch(e){
+    document.getElementById('login').style.display='flex';
+    const em=document.getElementById('err-msg');
+    if(em) em.textContent='Erreur au démarrage — réessaie.';
+  }
+}
+init();
+</script>
