@@ -580,18 +580,18 @@ function weeklyKm(acts, n=7){
   for(let w=0;w<n;w++){
     const e=new Date(now); e.setDate(e.getDate()-w*7);
     const s=new Date(e); s.setDate(s.getDate()-7);
-    const ws=acts.filter(a=>{ const d=new Date(a.start_local); return d>=s&&d<e; });
-    res.unshift({l:w===0?'Cette sem':`S-${w+1}`, km:ws.reduce((acc,a)=>acc+a.summary.distance/1000,0)});
+    const ws=acts.filter(a=>{ const d=new Date(a.start_date_local); return d>=s&&d<e; });
+    res.unshift({l:w===0?'Cette sem':`S-${w+1}`, km:ws.reduce((acc,a)=>acc+(a.distance||0)/1000,0)});
   }
   return res;
 }
 function last7(acts){
   const c=Date.now()-7*86400000;
-  const ws=acts.filter(a=>new Date(a.start_local).getTime()>c);
+  const ws=acts.filter(a=>new Date(a.start_date_local).getTime()>c);
   return {
-    km:ws.reduce((s,a)=>s+a.summary.distance/1000,0),
-    elev:ws.reduce((s,a)=>s+a.summary.elevation_gain,0),
-    t:ws.reduce((s,a)=>s+a.summary.moving_time,0),
+    km:ws.reduce((s,a)=>s+(a.distance||0)/1000,0),
+    elev:ws.reduce((s,a)=>s+(a.total_elevation_gain||0),0),
+    t:ws.reduce((s,a)=>s+(a.moving_time||0),0),
     n:ws.length
   };
 }
@@ -621,8 +621,8 @@ async function renderDash(){
   const recentActs=acts.slice(0,5).map(a=>`
     <div class="nrow"><div class="nbody">
       <div class="nfood">${a.name}${tag(a.sport_type)}</div>
-      <div class="ndetail">${fmtDate(a.start_local)} · ${fmtD(a.summary.distance)} · ${Math.round(a.summary.elevation_gain)}m D+</div>
-    </div><div class="ng">${fmtT(a.summary.moving_time)}</div></div>
+      <div class="ndetail">${fmtDate(a.start_date_local)} · ${fmtD(a.distance)} · ${Math.round(a.total_elevation_gain)}m D+</div>
+    </div><div class="ng">${fmtT(a.moving_time)}</div></div>
   `).join('');
 
   const avatarHtml = ath.profile_medium
@@ -684,19 +684,19 @@ async function renderActs(){
     <div class="act" onclick="toggleAct(${i})">
       <div class="act-top">
         <div class="act-name">${a.name}${tag(a.sport_type)}</div>
-        <div class="act-date">${fmtDate(a.start_local)}</div>
+        <div class="act-date">${fmtDate(a.start_date_local)}</div>
       </div>
       <div class="act-meta">
-        <div class="act-m"><strong>${fmtD(a.summary.distance)}</strong></div>
-        <div class="act-m"><strong>${Math.round(a.summary.elevation_gain)}m</strong> D+</div>
-        <div class="act-m"><strong>${fmtT(a.summary.moving_time)}</strong></div>
-        <div class="act-m"><strong>${fmtP(a.summary.avg_speed)}/km</strong></div>
+        <div class="act-m"><strong>${fmtD(a.distance)}</strong></div>
+        <div class="act-m"><strong>${Math.round(a.total_elevation_gain)}m</strong> D+</div>
+        <div class="act-m"><strong>${fmtT(a.moving_time)}</strong></div>
+        <div class="act-m"><strong>${fmtP(a.average_speed)}/km</strong></div>
       </div>
       <div class="act-detail" id="ad-${i}">
         <div class="act-meta" style="gap:14px;margin-top:4px">
-          ${a.summary.avg_cadence?`<div class="act-m"><strong>${Math.round(a.summary.avg_cadence*2)} spm</strong> cadence</div>`:''}
-          ${a.summary.total_calories?`<div class="act-m"><strong>${a.summary.total_calories} kcal</strong></div>`:''}
-          <div class="act-m"><strong>${fmtT(a.summary.elapsed_time)}</strong> total</div>
+          ${a.average_cadence?`<div class="act-m"><strong>${Math.round(a.average_cadence*2)} spm</strong> cadence</div>`:''}
+          ${a.kilojoules?`<div class="act-m"><strong>${a.kilojoules} kcal</strong></div>`:''}
+          <div class="act-m"><strong>${fmtT(a.elapsed_time)}</strong> total</div>
         </div>
         ${a.description?`<div style="font-size:10px;color:var(--text2);margin-top:6px;font-style:italic">"${a.description}"</div>`:''}
       </div>
