@@ -241,7 +241,7 @@ body {
 
 /* ── Login ──────────────────────────────────────────────────────────── */
 #login{
-  display:none;
+  display:flex;
   flex-direction:column;align-items:center;justify-content:center;
   min-height:100vh;padding:32px max(16px,env(safe-area-inset-left,16px));
   text-align:center;
@@ -856,19 +856,27 @@ async function renderApp(){
 }
 
 async function init(){
+  const loginDiv = document.getElementById('login');
+  const em = document.getElementById('err-msg');
   try{
     const p=new URLSearchParams(location.search);
     const code=p.get('code');
     if(code){
+      if(em) em.textContent='Connexion Strava en cours…';
       history.replaceState({},'',location.pathname);
-      await exchangeCode(code);
+      const ok = await exchangeCode(code);
+      if(!ok && em) em.textContent='Erreur d\'échange de token — réessaie.';
     }
-    if(loggedIn()){ await renderApp(); }
-    else { document.getElementById('login').style.display='flex'; }
+    if(loggedIn()){
+      loginDiv.style.display='none';
+      await renderApp();
+    } else {
+      loginDiv.style.display='flex';
+    }
   }catch(e){
-    document.getElementById('login').style.display='flex';
-    const em=document.getElementById('err-msg');
-    if(em) em.textContent='Erreur au démarrage — réessaie.';
+    loginDiv.style.display='flex';
+    if(em) em.textContent='Erreur: '+e.message;
+    console.error(e);
   }
 }
 init();
